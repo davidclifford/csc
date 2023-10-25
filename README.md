@@ -10,7 +10,7 @@ I felt it is time to extend the basic design to make it more capable and easier 
 ### Proposed Changes
 * Adding 2 more general purpose registers C & D to make arithmetic and logic easier and more efficient.
 * Getting rid of the Jump logic as this was inflexible and made 16 bit calulations and branching hard, instead having a flags register that feeds into the control ROMS. This also frees up 3 control lines.
-* Integrating a Bank register for more memory footprint.
+* Integrating a Bank register for a larger memory footprint.
 * Making the hacked signals more accessable with a new motherboard.
 * Easier expansion, e.g. VGA, SDD and maybe Sound.
 
