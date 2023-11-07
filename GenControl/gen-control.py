@@ -1,84 +1,90 @@
+import numpy as np
 #
 # Generates Control files into 16-bit ROM
 #
 
 # Control signal definitions
 
-# ALU
-ZERO = 0x00
-A = 0x01
+# ALU OP
+# 00 - 0f with carry bit (bit 0)
+A = 0x00
+Ainc = 0x01
 B = 0x02
-negA = 0x03
-negB = 0x04
-Ainc = 0x05
-Binc = 0x06
-Adec = 0x07
-Bdec = 0x08
-AplusB = 0x09
-AplusBinc = 0x0A
-AsubB = 0x0B
-#    A-Bspecial = 0x0C
-BsubA = 0x0D
-AsubBdec = 0x0E
-BsubAdec = 0x0F
-AmulBlo = 0x10
-AmulBhi = 0x11
+Binc = 0x03
+A = 0x04
+Adec = 0x05
+B = 0x06
+Bdec = 0x07
+ApB = 0x08
+ApBp1 = 0x09
+AmB = 0x0a
+AmBm1 = 0x0b
+BmA = 0x0c
+BmAm1 = 0x0d
+Zero = 0x0e
+One = 0x0f
+
+# 10 - 1f without carry
+ABLo = 0x10
+ABHi = 0x11
 AdivB = 0x12
 AmodB = 0x13
-#    A<<B       = 0x14
-#    A>>BL      = 0x15
-#    A>>BA      = 0x16
-#    AROLB      = 0x17
-#    ARORB      = 0x18
-AandB = 0x19
-AorB = 0x1A
-AxorB = 0x1B
-notA = 0x1C
-notB = 0x1D
-AdivB10 = 0x1E
-AremB10 = 0x1F
+AorB = 0x14
+AandB = 0x15
+AxorB = 0x16
+Adiv10B = 0x17
+Amod10B = 0x18
+notA = 0x19
+notB = 0x1a
+negA = 0x1b
+negB = 0x1c
+spare1 = 0x1d
+spare2 = 0x1e
+spare3 = 0x1f
 
-# DB load
-IRload = 0x01 << 5
-Aload = 0x02 << 5
-Bload = 0x03 << 5
-Cload = 0x04 << 5
-Dload = 0x05 << 5
-MEMload = 0x06 << 5
-AHload = 0x06 << 5
-ALload = 0x06 << 5
-IOload = 0x07 << 5
-PCload = 0x08 << 5
-Tload = 0x09 << 5
-BANKload = 0x0a << 5
-AH2load = 0x0b << 5
-AL2load = 0x0c << 5
+CDsel = 0x20  # AB or CD
+UseCarry = 0x40
+Unused = 0x80
 
-# DB Assert
-MEMresult = 0x00 << 9
-ALUresult = 0x01 << 9
-IOresult = 0x02 << 9
-IOctrl = 0x03 << 9
-EXTresult = 0x04 << 9
-KEYresult = 0x05 << 9
+# DB load (4-bits)
+IRload = 0x01 << 0
+Aload = 0x02 << 0
+Bload = 0x03 << 0
+Cload = 0x04 << 0
+Dload = 0x05 << 0
+MEMload = 0x06 << 0
+AHload = 0x06 << 0
+ALload = 0x06 << 0
+IOload = 0x07 << 0
+BANKload = 0x08 << 0
+ALUopload = 0x09 << 0
 
+# DB Assert (2-bits)
+MEMresult = 0x00 << 4
+ALUresult = 0x01 << 4
+IOresult = 0x02 << 4
+EXTresult = 0x03 << 4
 
-# Other
-ARena = 1 << 12
-PCinc = 1 << 13
-uReset = 1 << 14
-CDena = 1 << 15
-Spare = 1 << 16
+# Jump Logic (3-bits)
+JP_None = 0x0 << 6
+JP_ALU_Z = 0x1 << 6
+JP_ALU_N = 0x2 << 6
+JP_Tx = 0x3 << 6
+JP_Rx = 0x4 << 6
+JP_Always = 0x5 << 6
 
-C = A | CDena
-D = B | CDena
+# Other (9-12 spare)
+ARena = 1 << 13
+PCinc = 1 << 14
+uReset = 1 << 15
 
 FL_C = 1
 FL_V = 2
 FL_Z = 4
 FL_N = 8
 
-FETCH = MEMresult | IRload | PCload
+# Jump logic
+FETCH = MEMresult | IRload | PCinc
 
 control = [0 for _ in range(256*16*64)]
 
@@ -91,29 +97,21 @@ def instruction(mnemonic, op, step, flags, cntrl):
 
 
 def flags_to_str(flags):
-    if flags & FL_C == FL_C:
-        f = 'C'
-    else:
-        f = 'c'
-    if flags & FL_V == FL_V:
-        f = 'V' + f
-    else:
-        f = 'v' + f
-    if flags & FL_Z == FL_Z:
-        f = 'Z' + f
-    else:
-        f = 'z' + f
-    if flags & FL_N == FL_N:
-        f = 'N' + f
-    else:
-        f = 'n' + f
+    f = ''
+    f += 'N' if flags & FL_N == FL_N else '-'
+    f += 'Z' if flags & FL_Z == FL_Z else '-'
+    f += 'V' if flags & FL_V == FL_V else '-'
+    f += 'C' if flags & FL_C == FL_C else '-'
     return f
 
+
+op_f = open('opcodes', 'w')
 
 for opcode in range(256):
     for flags in range(16):
         # First step is always FETCH
         bytes = 1
+        aluop = 0
         ctrl = FETCH
         mnemonic = 'FETCH'
         step = instruction(mnemonic, opcode, 0, flags, ctrl)
@@ -121,637 +119,442 @@ for opcode in range(256):
         if opcode == 0x00:
             mnemonic = 'NOP'
             step = instruction(mnemonic, opcode, step, flags, ctrl | uReset)
-
-# A reg
+# Reg = Immediate
         elif opcode == 0x01:
-            mnemonic = 'LDA 0'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | ZERO | ALUresult | Aload | uReset)
+            mnemonic = 'MOV_A'
+            ctrl = MEMresult | PCinc | Aload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
         elif opcode == 0x02:
-            mnemonic = 'LDA B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | B | ALUresult | Aload | uReset)
+            mnemonic = 'MOV_B'
+            ctrl = MEMresult | PCinc | Bload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
         elif opcode == 0x03:
-            mnemonic = 'LDA C'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | C | ALUresult | Aload | uReset)
+            mnemonic = 'MOV_C'
+            ctrl = MEMresult | PCinc | Cload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
         elif opcode == 0x04:
-            mnemonic = 'LDA D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | D | ALUresult | Aload | uReset)
-        elif opcode == 0x05:
-            mnemonic = 'LDA A+1'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | Ainc | ALUresult | Aload | uReset)
-        elif opcode == 0x06:
-            mnemonic = 'LDA A-1'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | Adec | ALUresult | Aload | uReset)
-        elif opcode == 0x07:
-            mnemonic = 'LDA A+B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AplusB | ALUresult | Aload | uReset)
-        elif opcode == 0x08:
-            mnemonic = 'LDA A+B+'
-            if flags & FL_C == FL_C:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | AplusBinc | ALUresult | Aload | uReset)
-            else:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | AplusB | ALUresult | Aload | uReset)
-        elif opcode == 0x09:
-            mnemonic = 'LDA A-B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AsubB | ALUresult | Aload | uReset)
-        elif opcode == 0x0a:
-            mnemonic = 'LDA A-B-'
-            if flags & FL_C == FL_C:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | AsubBdec | ALUresult | Aload | uReset)
-            else:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | AsubB | ALUresult | Aload | uReset)
-        elif opcode == 0x0b:
-            mnemonic = 'LDA A*BH'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AmulBhi | ALUresult | Aload | uReset)
-        elif opcode == 0x0c:
-            mnemonic = 'LDA A*BL'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AmulBlo | ALUresult | Aload | uReset)
-        elif opcode == 0x0d:
-            mnemonic = 'LDA A/B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AdivB | ALUresult | Aload | uReset)
-        elif opcode == 0x0e:
-            mnemonic = 'LDA A%B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AmodB | ALUresult | Aload | uReset)
-        elif opcode == 0x0f:
-            mnemonic = 'LDA A&B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AandB | ALUresult | Aload | uReset)
-        elif opcode == 0x10:
-            mnemonic = 'LDA A|B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AorB | ALUresult | Aload | uReset)
+            mnemonic = 'MOV_D'
+            ctrl = MEMresult | PCinc | Dload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
         elif opcode == 0x11:
-            mnemonic = 'LDA A^B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AxorB | ALUresult | Aload | uReset)
-        elif opcode == 0x12:
-            mnemonic = 'LDA ADIVB'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AdivB10 | ALUresult | Aload | uReset)
-        elif opcode == 0x13:
-            mnemonic = 'LDA AREMB'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AremB10 | ALUresult | Aload | uReset)
-        elif opcode == 0x14:
-            mnemonic = 'LDA -A'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | negA | ALUresult | Aload | uReset)
-        elif opcode == 0x15:
-            mnemonic = 'LDA !A'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | notA | ALUresult | Aload | uReset)
-        elif opcode == 0x16:
-            mnemonic = 'LDA A+1+'
-            if flags & FL_C == FL_C:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | Ainc | ALUresult | Aload | uReset)
-            else:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | A | ALUresult | Aload | uReset)
-        elif opcode == 0x17:
-            mnemonic = 'LDA A-1-'
-            if flags & FL_C == FL_C:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | Adec | ALUresult | Aload | uReset)
-            else:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | A | ALUresult | Aload | uReset)
-
-# B reg
-        elif opcode == 0x21:
-            mnemonic = 'LDB 0'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | ZERO | ALUresult | Bload | uReset)
-        elif opcode == 0x22:
-            mnemonic = 'LDB A'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | A | ALUresult | Bload | uReset)
-        elif opcode == 0x23:
-            mnemonic = 'LDB C'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | C | ALUresult | Bload | uReset)
-        elif opcode == 0x24:
-            mnemonic = 'LDB D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | D | ALUresult | Bload | uReset)
-        elif opcode == 0x25:
-            mnemonic = 'LDB B+1'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | Binc | ALUresult | Bload | uReset)
-        elif opcode == 0x26:
-            mnemonic = 'LDB B-1'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | Bdec | ALUresult | Bload | uReset)
-        elif opcode == 0x27:
-            mnemonic = 'LDB A+B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AplusB | ALUresult | Bload | uReset)
-        elif opcode == 0x28:
-            mnemonic = 'LDB A+B+'
-            if flags & FL_C == FL_C:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | AplusBinc | ALUresult | Bload | uReset)
-            else:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | AplusB | ALUresult | Bload | uReset)
-        elif opcode == 0x29:
-            mnemonic = 'LDB B-A'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | BsubA | ALUresult | Bload | uReset)
-        elif opcode == 0x2a:
-            mnemonic = 'LDB B-A-'
-            if flags & FL_C == FL_C:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | BsubAdec | ALUresult | Bload | uReset)
-            else:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | BsubA | ALUresult | Bload | uReset)
-        elif opcode == 0x2b:
-            mnemonic = 'LDB A*BH'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AmulBhi | ALUresult | Bload | uReset)
-        elif opcode == 0x2c:
-            mnemonic = 'LDB A*BL'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AmulBlo | ALUresult | Bload | uReset)
-        elif opcode == 0x2d:
-            mnemonic = 'LDB A/B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AdivB | ALUresult | Bload | uReset)
-        elif opcode == 0x2e:
-            mnemonic = 'LDB A%B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AmodB | ALUresult | Bload | uReset)
-        elif opcode == 0x2f:
-            mnemonic = 'LDB A&B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AandB | ALUresult | Bload | uReset)
-        elif opcode == 0x30:
-            mnemonic = 'LDB A|B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AorB | ALUresult | Bload | uReset)
-        elif opcode == 0x31:
-            mnemonic = 'LDB A^B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AxorB | ALUresult | Bload | uReset)
-        elif opcode == 0x32:
-            mnemonic = 'LDB ADIVB'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AdivB10 | ALUresult | Bload | uReset)
-        elif opcode == 0x33:
-            mnemonic = 'LDB AREMB'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AremB10 | ALUresult | Bload | uReset)
-        elif opcode == 0x34:
-            mnemonic = 'LDB -B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | negB | ALUresult | Bload | uReset)
-        elif opcode == 0x35:
-            mnemonic = 'LDB !B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | notB | ALUresult | Bload | uReset)
-        elif opcode == 0x36:
-            mnemonic = 'LDB B+1+'
-            if flags & FL_C == FL_C:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | Binc | ALUresult | Bload | uReset)
-            else:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | B | ALUresult | Bload | uReset)
-        elif opcode == 0x37:
-            mnemonic = 'LDB B-1-'
-            if flags & FL_C == FL_C:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | Bdec | ALUresult | Bload | uReset)
-            else:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | B | ALUresult | Bload | uReset)
-
-# C reg
-        elif opcode == 0x41:
-            mnemonic = 'LDC 0'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | ZERO | ALUresult | Cload | uReset)
-        elif opcode == 0x42:
-            mnemonic = 'LDC B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | B | ALUresult | Cload | uReset)
-        elif opcode == 0x43:
-            mnemonic = 'LDC A'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | A | ALUresult | Cload | uReset)
-        elif opcode == 0x44:
-            mnemonic = 'LDC D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | D | ALUresult | Cload | uReset)
-        elif opcode == 0x45:
-            mnemonic = 'LDC C+1'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | Ainc | CDena | ALUresult | Cload | uReset)
-        elif opcode == 0x46:
-            mnemonic = 'LDC C-1'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | Adec | CDena | ALUresult | Cload | uReset)
-        elif opcode == 0x47:
-            mnemonic = 'LDC C+D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AplusB | CDena | ALUresult | Cload | uReset)
-        elif opcode == 0x48:
-            mnemonic = 'LDC C+D+'
-            if flags & FL_C == FL_C:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | AplusBinc | CDena | ALUresult | Cload | uReset)
-            else:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | AplusB | CDena | ALUresult | Cload | uReset)
-        elif opcode == 0x49:
-            mnemonic = 'LDC C-D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AsubB | CDena | ALUresult | Cload | uReset)
-        elif opcode == 0x4a:
-            mnemonic = 'LDC C-D-'
-            if flags & FL_C == FL_C:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | AsubBdec | CDena | ALUresult | Cload | uReset)
-            else:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | AsubB | CDena | ALUresult | Cload | uReset)
-        elif opcode == 0x4b:
-            mnemonic = 'LDC C*DH'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AmulBhi | CDena | ALUresult | Cload | uReset)
-        elif opcode == 0x4c:
-            mnemonic = 'LDC C*DL'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AmulBlo | CDena | ALUresult | Cload | uReset)
-        elif opcode == 0x4d:
-            mnemonic = 'LDC C/D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AdivB | CDena | ALUresult | Cload | uReset)
-        elif opcode == 0x4e:
-            mnemonic = 'LDC C%D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AmodB | CDena | ALUresult | Cload | uReset)
-        elif opcode == 0x4f:
-            mnemonic = 'LDC C&D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AandB | CDena | ALUresult | Cload | uReset)
-        elif opcode == 0x50:
-            mnemonic = 'LDC C|D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AorB | CDena | ALUresult | Cload | uReset)
-        elif opcode == 0x51:
-            mnemonic = 'LDC C^D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AxorB | CDena | ALUresult | Cload | uReset)
-        elif opcode == 0x52:
-            mnemonic = 'LDC CDIVD'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AdivB10 | CDena | ALUresult | Cload | uReset)
-        elif opcode == 0x53:
-            mnemonic = 'LDC CREMD'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AremB10 | CDena | ALUresult | Cload | uReset)
-        elif opcode == 0x54:
-            mnemonic = 'LDC -C'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | negA | CDena | ALUresult | Cload | uReset)
-        elif opcode == 0x55:
-            mnemonic = 'LDC !C'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | notA | CDena | ALUresult | Cload | uReset)
-        elif opcode == 0x56:
-            mnemonic = 'LDC C+1+'
-            if flags & FL_C == FL_C:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | Ainc | CDena | ALUresult | Aload | uReset)
-            else:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | A | CDena | ALUresult | Aload | uReset)
-        elif opcode == 0x57:
-            mnemonic = 'LDC C-1-'
-            if flags & FL_C == FL_C:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | Adec | CDena | ALUresult | Aload | uReset)
-            else:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | A | CDena | ALUresult | Aload | uReset)
-# D reg
-        elif opcode == 0x61:
-            mnemonic = 'LDD 0'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | ZERO | CDena | ALUresult | Dload | uReset)
-        elif opcode == 0x62:
-            mnemonic = 'LDD A'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | A | CDena | ALUresult | Dload | uReset)
-        elif opcode == 0x63:
-            mnemonic = 'LDD B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | B | CDena | ALUresult | Dload | uReset)
-        elif opcode == 0x64:
-            mnemonic = 'LDD C'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | C | CDena | ALUresult | Dload | uReset)
-        elif opcode == 0x65:
-            mnemonic = 'LDD D+1'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | Binc | CDena | ALUresult | Dload | uReset)
-        elif opcode == 0x66:
-            mnemonic = 'LDD D-1'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | Bdec | CDena | ALUresult | Dload | uReset)
-        elif opcode == 0x67:
-            mnemonic = 'LDD C+D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AplusB | CDena | ALUresult | Dload | uReset)
-        elif opcode == 0x68:
-            mnemonic = 'LDD C+D+'
-            if flags & FL_C == FL_C:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | AplusBinc | CDena | ALUresult | Dload | uReset)
-            else:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | AplusB | CDena | ALUresult | Dload | uReset)
-        elif opcode == 0x69:
-            mnemonic = 'LDD D-C'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | BsubA | CDena | ALUresult | Dload | uReset)
-        elif opcode == 0x6a:
-            mnemonic = 'LDD D-C-'
-            if flags & FL_C == FL_C:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | BsubAdec | CDena | ALUresult | Dload | uReset)
-            else:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | BsubA | CDena | ALUresult | Dload | uReset)
-        elif opcode == 0x6b:
-            mnemonic = 'LDD D*CH'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AmulBhi | CDena | ALUresult | Dload | uReset)
-        elif opcode == 0x6c:
-            mnemonic = 'LDD D*CL'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AmulBlo | CDena | ALUresult | Dload | uReset)
-        elif opcode == 0x6d:
-            mnemonic = 'LDD C/D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AdivB | CDena | ALUresult | Dload | uReset)
-        elif opcode == 0x6e:
-            mnemonic = 'LDD C%D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AmodB | CDena | ALUresult | Dload | uReset)
-        elif opcode == 0x6f:
-            mnemonic = 'LDD C&D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AandB | CDena | ALUresult | Dload | uReset)
-        elif opcode == 0x70:
-            mnemonic = 'LDD C|D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AorB | CDena | ALUresult | Dload | uReset)
-        elif opcode == 0x71:
-            mnemonic = 'LDD C^D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AxorB | CDena | ALUresult | Dload | uReset)
-        elif opcode == 0x72:
-            mnemonic = 'LDD CDIVD'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AdivB10 | CDena | ALUresult | Dload | uReset)
-        elif opcode == 0x73:
-            mnemonic = 'LDD CREMD'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AremB10 | CDena | ALUresult | Dload | uReset)
-        elif opcode == 0x74:
-            mnemonic = 'LDD -D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | negB | CDena | ALUresult | Dload | uReset)
-        elif opcode == 0x75:
-            mnemonic = 'LDD !D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | notB | CDena | ALUresult | Dload | uReset)
-        elif opcode == 0x76:
-            mnemonic = 'LDD D+1+'
-            if flags & FL_C == FL_C:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | Binc | CDena | ALUresult | Bload | uReset)
-            else:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | B | CDena | ALUresult | Bload | uReset)
-        elif opcode == 0x77:
-            mnemonic = 'LDD D-1-'
-            if flags & FL_C == FL_C:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | Bdec | CDena | ALUresult | Bload | uReset)
-            else:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | B | CDena | ALUresult | Bload | uReset)
-# A op B -> MEM
-        elif opcode == 0x80:
-            mnemonic = 'STO 0'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | ZERO | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0x81:
-            mnemonic = 'STO A'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | A | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0x82:
-            mnemonic = 'STO B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | B | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0x83:
-            mnemonic = 'STO C'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | C | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0x84:
-            mnemonic = 'STO D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | D | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0x85:
-            mnemonic = 'STO A+1'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | Ainc | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0x86:
-            mnemonic = 'STO A-1'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | Adec | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0x87:
-            mnemonic = 'STO A+B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AplusB | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0x88:
-            mnemonic = 'STO A+B+'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            if flags & FL_C == FL_C:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | AplusBinc | ALUresult | MEMload | ARena | uReset)
-            else:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | AplusB | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0x89:
-            mnemonic = 'STO A-B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AsubB | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0x8a:
-            mnemonic = 'STO A-B-'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            if flags & FL_C == FL_C:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | AsubBdec | ALUresult | MEMload | ARena | uReset)
-            else:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | AsubB | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0x8b:
-            mnemonic = 'STO A*BH'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AmulBhi | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0x8c:
-            mnemonic = 'STO A*BL'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AmulBlo | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0x8d:
-            mnemonic = 'STO A/B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AdivB | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0x8e:
-            mnemonic = 'STO A%B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AmodB | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0x8f:
-            mnemonic = 'STO A&B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AandB | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0x90:
-            mnemonic = 'STO A|B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AorB | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0x91:
-            mnemonic = 'STO A^B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AxorB | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0x92:
-            mnemonic = 'STO ADIVB'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AdivB10 | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0x93:
-            mnemonic = 'STO AREMB'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AremB10 | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0x94:
-            mnemonic = 'STO -A'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | negA | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0x95:
-            mnemonic = 'STO !A'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | notA | ALUresult | MEMload | ARena | uReset)
-
-# C op D -> MEM
-        elif opcode == 0xa0:
-            mnemonic = 'STO -D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | negB | CDena | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0xa1:
-            mnemonic = 'STO !D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | notB | CDena | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0xa2:
-            mnemonic = 'STO D+1'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | Binc | CDena | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0xa3:
-            mnemonic = 'STO D-1'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | Bdec | CDena | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0xa5:
-            mnemonic = 'STO C+1'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | Ainc | CDena | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0xa6:
-            mnemonic = 'STO C-1'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | Adec | CDena | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0xa7:
-            mnemonic = 'STO C+D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AplusB | CDena | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0xa8:
-            mnemonic = 'STO C+D+'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            if flags & FL_C == FL_C:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | AplusBinc | CDena | ALUresult | MEMload | ARena | uReset)
-            else:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | AplusB | CDena | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0xa9:
-            mnemonic = 'STO C-D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AsubB | CDena | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0xaa:
-            mnemonic = 'STO C-D-'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            if flags & FL_C == FL_C:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | AsubBdec | CDena | ALUresult | MEMload | ARena | uReset)
-            else:
-                step = instruction(mnemonic, opcode, step, flags, ctrl | AsubB | CDena | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0xab:
-            mnemonic = 'STO C*BH'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AmulBhi | CDena | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0xac:
-            mnemonic = 'STO C*BL'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AmulBlo | CDena | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0xad:
-            mnemonic = 'STO C/D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AdivB | CDena | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0xae:
-            mnemonic = 'STO C%D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AmodB | CDena | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0xaf:
-            mnemonic = 'STO C&D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AandB | CDena | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0xb0:
-            mnemonic = 'STO C|D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AorB | CDena | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0xb1:
-            mnemonic = 'STO C^D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AxorB | CDena | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0xb2:
-            mnemonic = 'STO CDIVD'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AdivB10 | CDena | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0xb3:
-            mnemonic = 'STO CREMD'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | AremB10 | CDena | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0xb4:
-            mnemonic = 'STO -C'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | negA | CDena | ALUresult | MEMload | ARena | uReset)
-        elif opcode == 0xb5:
-            mnemonic = 'STO !C'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | notA | CDena | ALUresult | MEMload | ARena | uReset)
-# Load constants
-        elif opcode == 0xc0:
-            mnemonic = 'MOV A'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | Aload | PCinc | uReset)
-        elif opcode == 0xc1:
-            mnemonic = 'MOV B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | Bload | PCinc | uReset)
-        elif opcode == 0xc2:
-            mnemonic = 'MOV C'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | Cload | PCinc | uReset)
-        elif opcode == 0xc3:
-            mnemonic = 'MOV D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | Dload | PCinc | uReset)
-# Load from abs address
-        elif opcode == 0xc4:
             mnemonic = 'LDA'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | Aload | PCinc | uReset)
-        elif opcode == 0xc5:
+            bytes = 2
+            aluop = 1
+            ctrl = MEMresult | PCinc | ALUopload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = ALUresult | Aload | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0x12:
             mnemonic = 'LDB'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | Bload | PCinc | uReset)
-        elif opcode == 0xc6:
+            bytes = 2
+            aluop = 1
+            ctrl = MEMresult | PCinc | ALUopload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = ALUresult | Bload | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0x13:
             mnemonic = 'LDC'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | Cload | PCinc | uReset)
-        elif opcode == 0xc7:
+            bytes = 2
+            aluop = 1
+            ctrl = MEMresult | PCinc | ALUopload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = ALUresult | Cload | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0x14:
             mnemonic = 'LDD'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | Dload | PCinc | uReset)
+            bytes = 2
+            aluop = 1
+            ctrl = MEMresult | PCinc | ALUopload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = ALUresult | Dload | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
 
-# Load from index address
-        elif opcode == 0xc8:
-            mnemonic = 'LDA_,B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ARena | AHload)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | ALUresult | B | ARena | ALload)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ARena | Aload | uReset)
-        elif opcode == 0xc9:
-            mnemonic = 'LDB_,B'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ARena | AHload)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | ALUresult | B | ARena | ALload)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ARena | Bload | uReset)
-        elif opcode == 0xca:
-            mnemonic = 'LDC_,D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ARena | AHload)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | ALUresult | B | CDena | ARena | ALload)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ARena | Cload | uReset)
-        elif opcode == 0xcb:
-            mnemonic = 'LDD_,D'
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ALload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | AHload | PCinc)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ARena | AHload)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | ALUresult | B | CDena | ARena | ALload)
-            step = instruction(mnemonic, opcode, step, flags, ctrl | MEMresult | ARena | Dload | uReset)
+        elif opcode == 0x15:
+            mnemonic = 'STO'
+            bytes = 4
+            aluop = 1
+            ctrl = MEMresult | PCinc | ALUopload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = ALUresult | MEMload | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
 
-# Unused op, set to Pseudo NOP
+# Indexed loads
+        elif opcode == 0x16:
+            mnemonic = 'LDA_,'
+            bytes = 3
+            aluop = 1
+            ctrl = MEMresult | PCinc | ALUopload  # e.g. B
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = ALUresult | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | Aload | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0x17:
+            mnemonic = 'LDB_,'
+            bytes = 3
+            aluop = 1
+            ctrl = MEMresult | PCinc | ALUopload  # e.g. B
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = ALUresult | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | Bload | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0x18:
+            mnemonic = 'LDC_,'
+            bytes = 3
+            aluop = 1
+            ctrl = MEMresult | PCinc | ALUopload  # e.g. B
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = ALUresult | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | Cload | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0x19:
+            mnemonic = 'LDD_,'
+            bytes = 3
+            aluop = 1
+            ctrl = MEMresult | PCinc | ALUopload  # e.g. B
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = ALUresult | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | Dload | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+# Indexed indirect
+        elif opcode == 0x1a:
+            mnemonic = 'LIA_,'
+            bytes = 4
+            aluop = 1
+            ctrl = MEMresult | PCinc | ALUopload  # e.g. B
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | ARena | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = ALUresult | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | ARena | Aload | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0x1b:
+            mnemonic = 'LIB_,'
+            bytes = 4
+            aluop = 1
+            ctrl = MEMresult | PCinc | ALUopload  # e.g. B
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | ARena | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = ALUresult | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | ARena | Bload | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0x1c:
+            mnemonic = 'LIC_,'
+            bytes = 4
+            aluop = 1
+            ctrl = MEMresult | PCinc | ALUopload  # e.g. B
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | ARena | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = ALUresult | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | ARena | Cload | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0x1d:
+            mnemonic = 'LID_,'
+            bytes = 4
+            aluop = 1
+            ctrl = MEMresult | PCinc | ALUopload  # e.g. B
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | ARena | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = ALUresult | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | ARena | Dload | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+# Jump instructions
+        elif opcode == 0x20:
+            mnemonic = 'JMP'
+            bytes = 3
+            ctrl = MEMresult | PCinc | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = JP_Always | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0x21:
+            mnemonic = 'JTX'
+            bytes = 3
+            ctrl = MEMresult | PCinc | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = JP_Tx | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0x22:
+            mnemonic = 'JRX'
+            bytes = 3
+            ctrl = MEMresult | PCinc | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = JP_Rx | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0x23:
+            mnemonic = 'JPZ'  # e.g. JPZ A ot JPZ D
+            aluop = 1
+            bytes = 4
+            ctrl = MEMresult | PCinc | ALUopload # [A,B], [AB,CD]
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = JP_ALU_Z | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0x24:
+            mnemonic = 'JPN'  # e.g. JPN A ot JPN D
+            aluop = 1
+            bytes = 4
+            ctrl = MEMresult | PCinc | ALUopload # [A,B], [AB,CD]
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = JP_ALU_Z | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0x25:
+            mnemonic = 'JEQ'  # Jump if result is Zero
+            aluop = 1
+            bytes = 4
+            ctrl = MEMresult | PCinc | ALUopload  # A-B or B-A etc
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            if flags & FL_Z == FL_Z:
+                ctrl = JP_Always | uReset
+            else:
+                ctrl = uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0x26:
+            mnemonic = 'JNE'  # Jump if result is Not Zero
+            aluop = 1
+            bytes = 4
+            ctrl = MEMresult | PCinc | ALUopload  # A-B or B-A etc
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            if flags & FL_Z == FL_Z:
+                ctrl = uReset
+            else:
+                ctrl = JP_Always | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0x27:
+            mnemonic = 'JGE'  # Jump if no carry
+            aluop = 1
+            bytes = 4
+            ctrl = MEMresult | PCinc | ALUopload  # A-B or B-A etc
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            if flags & FL_C == FL_C:
+                ctrl = uReset
+            else:
+                ctrl = JP_Always | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0x28:
+            mnemonic = 'JLT'  # Jump if carry
+            aluop = 1
+            bytes = 4
+            ctrl = MEMresult | PCinc | ALUopload  # A-B or B-A etc
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            if flags & FL_C == FL_C:
+                ctrl = JP_Always | uReset
+            else:
+                ctrl = uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0x29:
+            mnemonic = 'JPN'  # Jump if negative
+            aluop = 1
+            bytes = 4
+            ctrl = MEMresult | PCinc | ALUopload  # A-B or B-A etc
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            if flags & FL_N == FL_N:
+                ctrl = JP_Always | uReset
+            else:
+                ctrl = uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0x2a:
+            mnemonic = 'JPP'  # Jump if positive
+            aluop = 1
+            bytes = 4
+            ctrl = MEMresult | PCinc | ALUopload  # A-B or B-A etc
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            if flags & FL_N == FL_N:
+                ctrl = uReset
+            else:
+                ctrl = JP_Always | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0x2b:
+            mnemonic = 'JPV'  # Jump if overflow
+            aluop = 1
+            bytes = 4
+            ctrl = MEMresult | PCinc | ALUopload  # A-B or B-A etc
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            if flags & FL_V == FL_V:
+                ctrl = JP_Always | uReset
+            else:
+                ctrl = uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0x2a:
+            mnemonic = 'JNV'  # Jump if no overflow
+            aluop = 1
+            bytes = 4
+            ctrl = MEMresult | PCinc | ALUopload  # A-B or B-A etc
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            if flags & FL_V == FL_V:
+                ctrl = uReset
+            else:
+                ctrl = JP_Always | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+
+# I/O in Register
+        elif opcode == 0x30:
+            mnemonic = 'IN_A'
+            ctrl = IOresult | Aload | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0x31:
+            mnemonic = 'IN_B'
+            ctrl = IOresult | Aload | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0x32:
+            mnemonic = 'IN_C'
+            ctrl = IOresult | Aload | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0x33:
+            mnemonic = 'IN_D'
+            ctrl = IOresult | Aload | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+# I/O in Memory
+        elif opcode == 0x34:
+            mnemonic = 'IN_'
+            bytes = 3
+            ctrl = MEMresult | PCinc | ALload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = MEMresult | PCinc | AHload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = IOresult | MEMload | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+# I/O out ALU op
+        elif opcode == 0x35:
+            mnemonic = 'OUT_'
+            bytes = 2
+            aluop = 1
+            ctrl = MEMresult | PCinc | ALUopload
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+            ctrl = ALUresult | IOload | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+# I/O out immediate
+        elif opcode == 0x36:
+            mnemonic = 'OUT'
+            bytes = 2
+            ctrl = MEMresult | PCinc | IOload | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        # Unused op, set to Pseudo NOP
         else:
             mnemonic = 'nop'
             step = instruction(mnemonic, opcode, step, flags, ctrl | uReset)
         print()
 
+    op_f.write(f'{opcode:02x} {mnemonic} {aluop} {bytes}\n')
+op_f.close()
 
+with open('control.bin', 'wb') as rom_f:
+    for b in control:
+        ui16 = np.uint16(b)
+        rom_f.write(ui16)
 
