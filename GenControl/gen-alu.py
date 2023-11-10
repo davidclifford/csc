@@ -35,6 +35,96 @@ spare1 = 0x1d
 spare2 = 0x1e
 spare3 = 0x1f
 
+CD = 0x20
+USE_CARRY = 0x40
+RESERVED_FOR_LATER__NOT_IN_USE = 0x80
+
+opcodes = {
+    A1: 'A',
+    Ainc: 'A+1',
+    B1: 'B',
+    Binc: 'B+1',
+    A2: 'AA',
+    Adec: 'A-1',
+    B2: 'BB',
+    Bdec: 'B-1',
+    ApB: 'A+B',
+    ApBp1: 'A+B+1',
+    AmB: 'A-B',
+    AmBm1: 'A-B-1',
+    BmA: 'B-A',
+    BmAm1: 'B-A-1',
+    Zero: '0',
+    One: '1',
+
+    ABLo: 'A*Blo',
+    ABHi: 'A*Bhi',
+    AdivB: 'A/B',
+    AmodB: 'A%B',
+    AorB: 'A|B',
+    AandB: 'A&B',
+    AxorB: 'A^B',
+    Adiv10B: 'AB/10',
+    Amod10B: 'AB%10',
+    notA: '!A',
+    notB: '!B',
+    negA: '-A',
+    negB: '-B',
+
+    CD | A1: 'C',
+    CD | Ainc: 'C+1',
+    CD | B1: 'D',
+    CD | Binc: 'D+1',
+    CD | A2: 'CC',
+    CD | Adec: 'C-1',
+    CD | B2: 'DD',
+    CD | Bdec: 'D-1',
+    CD | ApB: 'C+D',
+    CD | ApBp1: 'C+D+1',
+    CD | AmB: 'C-D',
+    CD | AmBm1: 'C-D-1',
+    CD | BmA: 'D-C',
+    CD | BmAm1: 'D-C-1',
+
+    CD | ABLo: 'C*Dlo',
+    CD | ABHi: 'C*Dhi',
+    CD | AdivB: 'C/D',
+    CD | AmodB: 'C%D',
+    CD | AorB: 'C|D',
+    CD | AandB: 'C&D',
+    CD | AxorB: 'C^D',
+    CD | Adiv10B: 'CD/10',
+    CD | Amod10B: 'CD%10',
+    CD | notA: '!C',
+    CD | notB: '!D',
+    CD | negA: '-C',
+    CD | negB: '-D',
+
+    USE_CARRY | A1: 'A+',
+    USE_CARRY | B1: 'B+',
+    USE_CARRY | A2: 'A-',
+    USE_CARRY | B2: 'B-',
+    USE_CARRY | ApB: 'A+B+',
+    USE_CARRY | AmB: 'A-B-',
+    USE_CARRY | BmA: 'B-A-',
+    USE_CARRY | Zero: 'CY',
+
+    USE_CARRY | CD | A1: 'C+',
+    USE_CARRY | CD | B1: 'D+',
+    USE_CARRY | CD | A2: 'C-',
+    USE_CARRY | CD | B2: 'D-',
+    USE_CARRY | CD | ApB: 'C+D+',
+    USE_CARRY | CD | AmB: 'C-D-',
+    USE_CARRY | CD | BmA: 'D-C-',
+}
+
+#  Generate ALU opcodes for assembler
+
+with open('aluopcodes', 'w') as aluops_file:
+    for op, mnemonic in opcodes.items():
+        print(f'{op:02x} {mnemonic}')
+        aluops_file.write(f'{op:02x} {mnemonic}\n')
+
 op = ['A', 'A+1', 'B', 'B+1', 'A', 'A-1', 'B', 'B-1']
 op += ['A+B', 'A+B+1', 'A-B', 'A-B-1', 'B-A', 'B-A-1', 'ZERO', 'ONE']
 op += ['A*Bl', 'A*Bh', 'A/B', 'A%B', 'A|B', 'A&B', 'A^B', 'AB/10']
@@ -164,3 +254,4 @@ with open('alu.bin', 'wb') as rom_f:
     for b in alu_rom:
         ui16 = np.uint16(b)
         rom_f.write(ui16)
+
