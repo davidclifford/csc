@@ -320,7 +320,7 @@ for opcode in range(256):
             step = instruction(mnemonic, opcode, step, flags, ctrl)
             ctrl = MEMresult | PCinc | AHload
             step = instruction(mnemonic, opcode, step, flags, ctrl)
-            ctrl = JP_Always | uReset
+            ctrl = ARena | JP_Always | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x21:
@@ -330,7 +330,7 @@ for opcode in range(256):
             step = instruction(mnemonic, opcode, step, flags, ctrl)
             ctrl = MEMresult | PCinc | AHload
             step = instruction(mnemonic, opcode, step, flags, ctrl)
-            ctrl = JP_Tx | uReset
+            ctrl = ARena | JP_Tx | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x22:
@@ -340,7 +340,7 @@ for opcode in range(256):
             step = instruction(mnemonic, opcode, step, flags, ctrl)
             ctrl = MEMresult | PCinc | AHload
             step = instruction(mnemonic, opcode, step, flags, ctrl)
-            ctrl = JP_Rx | uReset
+            ctrl = ARena | JP_Rx | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x23:
@@ -353,7 +353,7 @@ for opcode in range(256):
             step = instruction(mnemonic, opcode, step, flags, ctrl)
             ctrl = MEMresult | PCinc | AHload
             step = instruction(mnemonic, opcode, step, flags, ctrl)
-            ctrl = JP_ALU_Z | uReset
+            ctrl = ARena | JP_ALU_Z | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x24:
@@ -366,7 +366,7 @@ for opcode in range(256):
             step = instruction(mnemonic, opcode, step, flags, ctrl)
             ctrl = MEMresult | PCinc | AHload
             step = instruction(mnemonic, opcode, step, flags, ctrl)
-            ctrl = JP_ALU_Z | uReset
+            ctrl = ARena | JP_ALU_N | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x25:
@@ -380,7 +380,7 @@ for opcode in range(256):
             ctrl = MEMresult | PCinc | AHload
             step = instruction(mnemonic, opcode, step, flags, ctrl)
             if flags & FL_Z == FL_Z:
-                ctrl = JP_Always | uReset
+                ctrl = ARena | JP_Always | uReset
             else:
                 ctrl = uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
@@ -398,7 +398,7 @@ for opcode in range(256):
             if flags & FL_Z == FL_Z:
                 ctrl = uReset
             else:
-                ctrl = JP_Always | uReset
+                ctrl = ARena | JP_Always | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x27:
@@ -414,7 +414,7 @@ for opcode in range(256):
             if flags & FL_C == FL_C:
                 ctrl = uReset
             else:
-                ctrl = JP_Always | uReset
+                ctrl = ARena | JP_Always | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x28:
@@ -428,7 +428,7 @@ for opcode in range(256):
             ctrl = MEMresult | PCinc | AHload
             step = instruction(mnemonic, opcode, step, flags, ctrl)
             if flags & FL_C == FL_C:
-                ctrl = JP_Always | uReset
+                ctrl = ARena | JP_Always | uReset
             else:
                 ctrl = uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
@@ -444,7 +444,7 @@ for opcode in range(256):
             ctrl = MEMresult | PCinc | AHload
             step = instruction(mnemonic, opcode, step, flags, ctrl)
             if flags & FL_N == FL_N:
-                ctrl = JP_Always | uReset
+                ctrl = ARena | JP_Always | uReset
             else:
                 ctrl = uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
@@ -462,7 +462,7 @@ for opcode in range(256):
             if flags & FL_N == FL_N:
                 ctrl = uReset
             else:
-                ctrl = JP_Always | uReset
+                ctrl = ARena | JP_Always | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x2b:
@@ -476,7 +476,7 @@ for opcode in range(256):
             ctrl = MEMresult | PCinc | AHload
             step = instruction(mnemonic, opcode, step, flags, ctrl)
             if flags & FL_V == FL_V:
-                ctrl = JP_Always | uReset
+                ctrl = ARena | JP_Always | uReset
             else:
                 ctrl = uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
@@ -494,7 +494,7 @@ for opcode in range(256):
             if flags & FL_V == FL_V:
                 ctrl = uReset
             else:
-                ctrl = JP_Always | uReset
+                ctrl = ARena | JP_Always | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
 
