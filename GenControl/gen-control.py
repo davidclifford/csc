@@ -187,7 +187,7 @@ for opcode in range(256):
             step = instruction(mnemonic, opcode, step, flags, ctrl)
             ctrl = MEMresult | PCinc | AHload
             step = instruction(mnemonic, opcode, step, flags, ctrl)
-            ctrl = ALUresult | MEMload | uReset
+            ctrl = ALUresult | ARena | MEMload | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
 # Indexed loads
@@ -201,7 +201,7 @@ for opcode in range(256):
             step = instruction(mnemonic, opcode, step, flags, ctrl)
             ctrl = MEMresult | PCinc | AHload
             step = instruction(mnemonic, opcode, step, flags, ctrl)
-            ctrl = MEMresult | Aload | uReset
+            ctrl = ARena | MEMresult | Aload | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x17:
@@ -214,7 +214,7 @@ for opcode in range(256):
             step = instruction(mnemonic, opcode, step, flags, ctrl)
             ctrl = MEMresult | PCinc | AHload
             step = instruction(mnemonic, opcode, step, flags, ctrl)
-            ctrl = MEMresult | Bload | uReset
+            ctrl = ARena | MEMresult | Bload | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x18:
@@ -227,7 +227,7 @@ for opcode in range(256):
             step = instruction(mnemonic, opcode, step, flags, ctrl)
             ctrl = MEMresult | PCinc | AHload
             step = instruction(mnemonic, opcode, step, flags, ctrl)
-            ctrl = MEMresult | Cload | uReset
+            ctrl = ARena | MEMresult | Cload | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x19:
@@ -240,7 +240,7 @@ for opcode in range(256):
             step = instruction(mnemonic, opcode, step, flags, ctrl)
             ctrl = MEMresult | PCinc | AHload
             step = instruction(mnemonic, opcode, step, flags, ctrl)
-            ctrl = MEMresult | Dload | uReset
+            ctrl = ARena | MEMresult | Dload | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
 # Indexed indirect
@@ -353,7 +353,7 @@ for opcode in range(256):
             step = instruction(mnemonic, opcode, step, flags, ctrl)
             ctrl = MEMresult | PCinc | AHload
             step = instruction(mnemonic, opcode, step, flags, ctrl)
-            ctrl = ARena | JP_ALU_Z | uReset
+            ctrl = ARena | ALUresult | JP_ALU_Z | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x24:
@@ -366,7 +366,7 @@ for opcode in range(256):
             step = instruction(mnemonic, opcode, step, flags, ctrl)
             ctrl = MEMresult | PCinc | AHload
             step = instruction(mnemonic, opcode, step, flags, ctrl)
-            ctrl = ARena | JP_ALU_N | uReset
+            ctrl = ARena | ALUresult | JP_ALU_N | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x25:
@@ -526,7 +526,7 @@ for opcode in range(256):
             step = instruction(mnemonic, opcode, step, flags, ctrl)
             ctrl = MEMresult | PCinc | AHload
             step = instruction(mnemonic, opcode, step, flags, ctrl)
-            ctrl = IOresult | MEMload | uReset
+            ctrl = IOresult | ARena | MEMload | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 # I/O out ALU op
         elif opcode == 0x35:
