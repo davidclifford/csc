@@ -53,11 +53,11 @@ Bload = 0x03 << 0
 Cload = 0x04 << 0
 Dload = 0x05 << 0
 MEMload = 0x06 << 0
-AHload = 0x06 << 0
-ALload = 0x06 << 0
-IOload = 0x07 << 0
-BANKload = 0x08 << 0
-ALUopload = 0x09 << 0
+AHload = 0x07 << 0
+ALload = 0x08 << 0
+IOload = 0x09 << 0
+BANKload = 0x0a << 0
+ALUopload = 0x0b << 0
 
 # DB Assert (2-bits)
 MEMresult = 0x00 << 4
@@ -91,6 +91,7 @@ control = [0 for _ in range(256*16*64)]
 
 def instruction(mnemonic, op, step, flags, cntrl):
     addr = step | op << 4 | flags << 12
+    cntrl ^= (ARena | uReset)  # Flip ARena and uReset as they are active low
     control[addr] = cntrl
     print(f'{opcode:02x} {mnemonic:<10} {flags_to_str(flags)} {step:02} {cntrl:04x} {cntrl:016b}')
     return step + 1
@@ -122,22 +123,22 @@ for opcode in range(256):
 # Reg = Immediate
         elif opcode == 0x01:
             mnemonic = 'MOV_A'
-            ctrl = MEMresult | PCinc | Aload
+            ctrl = MEMresult | PCinc | Aload | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x02:
             mnemonic = 'MOV_B'
-            ctrl = MEMresult | PCinc | Bload
+            ctrl = MEMresult | PCinc | Bload | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x03:
             mnemonic = 'MOV_C'
-            ctrl = MEMresult | PCinc | Cload
+            ctrl = MEMresult | PCinc | Cload | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x04:
             mnemonic = 'MOV_D'
-            ctrl = MEMresult | PCinc | Dload
+            ctrl = MEMresult | PCinc | Dload | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x11:
@@ -542,6 +543,11 @@ for opcode in range(256):
             mnemonic = 'OUT'
             bytes = 2
             ctrl = MEMresult | PCinc | IOload | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0xff:
+            mnemonic = 'BRK'
+            ctrl = uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         # Unused op, set to Pseudo NOP
