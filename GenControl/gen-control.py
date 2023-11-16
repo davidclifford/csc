@@ -106,7 +106,7 @@ def flags_to_str(flags):
     return f
 
 
-op_f = open('opcodes', 'w')
+op_f = open('../opcodes', 'w')
 
 for opcode in range(256):
     for flags in range(16):
@@ -122,23 +122,33 @@ for opcode in range(256):
             step = instruction(mnemonic, opcode, step, flags, ctrl | uReset)
 # Reg = Immediate
         elif opcode == 0x01:
-            mnemonic = 'MOV_A'
+            mnemonic = 'MVA'
+            bytes = 2
             ctrl = MEMresult | PCinc | Aload | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x02:
-            mnemonic = 'MOV_B'
+            mnemonic = 'MVB'
+            bytes = 2
             ctrl = MEMresult | PCinc | Bload | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x03:
-            mnemonic = 'MOV_C'
+            mnemonic = 'MVC'
+            bytes = 2
             ctrl = MEMresult | PCinc | Cload | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x04:
-            mnemonic = 'MOV_D'
+            mnemonic = 'MVD'
+            bytes = 2
             ctrl = MEMresult | PCinc | Dload | uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
+        elif opcode == 0x05:
+            mnemonic = 'BNK'
+            bytes = 2
+            ctrl = MEMresult | PCinc | BANKload | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x11:
@@ -192,7 +202,7 @@ for opcode in range(256):
 
 # Indexed loads
         elif opcode == 0x16:
-            mnemonic = 'LDA_,'
+            mnemonic = 'LXA'
             bytes = 3
             aluop = 1
             ctrl = MEMresult | PCinc | ALUopload  # e.g. B
@@ -205,7 +215,7 @@ for opcode in range(256):
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x17:
-            mnemonic = 'LDB_,'
+            mnemonic = 'LXB'
             bytes = 3
             aluop = 1
             ctrl = MEMresult | PCinc | ALUopload  # e.g. B
@@ -218,7 +228,7 @@ for opcode in range(256):
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x18:
-            mnemonic = 'LDC_,'
+            mnemonic = 'LXC'
             bytes = 3
             aluop = 1
             ctrl = MEMresult | PCinc | ALUopload  # e.g. B
@@ -231,7 +241,7 @@ for opcode in range(256):
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x19:
-            mnemonic = 'LDD_,'
+            mnemonic = 'LXD'
             bytes = 3
             aluop = 1
             ctrl = MEMresult | PCinc | ALUopload  # e.g. B
@@ -245,7 +255,7 @@ for opcode in range(256):
 
 # Indexed indirect
         elif opcode == 0x1a:
-            mnemonic = 'LIA_,'
+            mnemonic = 'LIA'
             bytes = 4
             aluop = 1
             ctrl = MEMresult | PCinc | ALUopload  # e.g. B
@@ -262,7 +272,7 @@ for opcode in range(256):
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x1b:
-            mnemonic = 'LIB_,'
+            mnemonic = 'LIB'
             bytes = 4
             aluop = 1
             ctrl = MEMresult | PCinc | ALUopload  # e.g. B
@@ -279,7 +289,7 @@ for opcode in range(256):
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x1c:
-            mnemonic = 'LIC_,'
+            mnemonic = 'LIC'
             bytes = 4
             aluop = 1
             ctrl = MEMresult | PCinc | ALUopload  # e.g. B
@@ -296,7 +306,7 @@ for opcode in range(256):
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x1d:
-            mnemonic = 'LID_,'
+            mnemonic = 'LID'
             bytes = 4
             aluop = 1
             ctrl = MEMresult | PCinc | ALUopload  # e.g. B
@@ -500,27 +510,27 @@ for opcode in range(256):
 
 # I/O in Register
         elif opcode == 0x30:
-            mnemonic = 'IN_A'
+            mnemonic = 'INA'
             ctrl = IOresult | Aload | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x31:
-            mnemonic = 'IN_B'
+            mnemonic = 'INB'
             ctrl = IOresult | Aload | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x32:
-            mnemonic = 'IN_C'
+            mnemonic = 'INC'
             ctrl = IOresult | Aload | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x33:
-            mnemonic = 'IN_D'
+            mnemonic = 'IND'
             ctrl = IOresult | Aload | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 # I/O in Memory
         elif opcode == 0x34:
-            mnemonic = 'IN_'
+            mnemonic = 'INM'
             bytes = 3
             ctrl = MEMresult | PCinc | ALload
             step = instruction(mnemonic, opcode, step, flags, ctrl)
@@ -530,7 +540,7 @@ for opcode in range(256):
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 # I/O out ALU op
         elif opcode == 0x35:
-            mnemonic = 'OUT_'
+            mnemonic = 'OUT'
             bytes = 2
             aluop = 1
             ctrl = MEMresult | PCinc | ALUopload
@@ -540,7 +550,7 @@ for opcode in range(256):
 
 # I/O out immediate
         elif opcode == 0x36:
-            mnemonic = 'OUT'
+            mnemonic = 'CHR'
             bytes = 2
             ctrl = MEMresult | PCinc | IOload | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
@@ -552,7 +562,7 @@ for opcode in range(256):
 
         # Unused op, set to Pseudo NOP
         else:
-            mnemonic = 'nop'
+            mnemonic = f'X{opcode:02x}'
             step = instruction(mnemonic, opcode, step, flags, ctrl | uReset)
         print()
 

@@ -120,7 +120,7 @@ opcodes = {
 
 #  Generate ALU opcodes for assembler
 
-with open('aluopcodes', 'w') as aluops_file:
+with open('../aluopcodes', 'w') as aluops_file:
     for op, mnemonic in opcodes.items():
         print(f'{op:02x} {mnemonic}')
         aluops_file.write(f'{op:02x} {mnemonic}\n')
@@ -200,6 +200,8 @@ for alu_op in range(32):
                     alu |= FL_C
             elif alu_op == ABHi:
                 alu = ((a*b) >> 8) & 0xff
+                if alu > 0:
+                    alu |= FL_C
             elif alu_op == AdivB:
                 if b == 0:
                     alu = FL_V
