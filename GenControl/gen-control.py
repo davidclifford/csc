@@ -204,7 +204,7 @@ for opcode in range(256):
         elif opcode == 0x16:
             mnemonic = 'LXA'
             bytes = 3
-            aluop = 1
+            aluop = 2
             ctrl = MEMresult | PCinc | ALUopload  # e.g. B
             step = instruction(mnemonic, opcode, step, flags, ctrl)
             ctrl = ALUresult | ALload
@@ -217,7 +217,7 @@ for opcode in range(256):
         elif opcode == 0x17:
             mnemonic = 'LXB'
             bytes = 3
-            aluop = 1
+            aluop = 2
             ctrl = MEMresult | PCinc | ALUopload  # e.g. B
             step = instruction(mnemonic, opcode, step, flags, ctrl)
             ctrl = ALUresult | ALload
@@ -230,7 +230,7 @@ for opcode in range(256):
         elif opcode == 0x18:
             mnemonic = 'LXC'
             bytes = 3
-            aluop = 1
+            aluop = 2
             ctrl = MEMresult | PCinc | ALUopload  # e.g. B
             step = instruction(mnemonic, opcode, step, flags, ctrl)
             ctrl = ALUresult | ALload
@@ -243,7 +243,7 @@ for opcode in range(256):
         elif opcode == 0x19:
             mnemonic = 'LXD'
             bytes = 3
-            aluop = 1
+            aluop = 2
             ctrl = MEMresult | PCinc | ALUopload  # e.g. B
             step = instruction(mnemonic, opcode, step, flags, ctrl)
             ctrl = ALUresult | ALload
@@ -257,7 +257,7 @@ for opcode in range(256):
         elif opcode == 0x1a:
             mnemonic = 'LIA'
             bytes = 4
-            aluop = 1
+            aluop = 2
             ctrl = MEMresult | PCinc | ALUopload  # e.g. B
             step = instruction(mnemonic, opcode, step, flags, ctrl)
             ctrl = MEMresult | PCinc | ALload
@@ -274,7 +274,7 @@ for opcode in range(256):
         elif opcode == 0x1b:
             mnemonic = 'LIB'
             bytes = 4
-            aluop = 1
+            aluop = 2
             ctrl = MEMresult | PCinc | ALUopload  # e.g. B
             step = instruction(mnemonic, opcode, step, flags, ctrl)
             ctrl = MEMresult | PCinc | ALload
@@ -291,7 +291,7 @@ for opcode in range(256):
         elif opcode == 0x1c:
             mnemonic = 'LIC'
             bytes = 4
-            aluop = 1
+            aluop = 2
             ctrl = MEMresult | PCinc | ALUopload  # e.g. B
             step = instruction(mnemonic, opcode, step, flags, ctrl)
             ctrl = MEMresult | PCinc | ALload
@@ -308,7 +308,7 @@ for opcode in range(256):
         elif opcode == 0x1d:
             mnemonic = 'LID'
             bytes = 4
-            aluop = 1
+            aluop = 2
             ctrl = MEMresult | PCinc | ALUopload  # e.g. B
             step = instruction(mnemonic, opcode, step, flags, ctrl)
             ctrl = MEMresult | PCinc | ALload
