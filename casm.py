@@ -26,6 +26,8 @@ def parse_number(num):
             return parse_number(num[1:]) & 0xff
         if num.startswith('>'):
             return (parse_number(num[1:]) >> 8) & 0xff
+        if num.startswith('"') or num.startswith("'"):
+            return ord(num[1:2]) & 0xff
     except ValueError:
         pass
     print(f'Expected a number but found {num} on line {line_count}')
@@ -33,7 +35,7 @@ def parse_number(num):
 
 
 try:
-    with open('opcodes') as file:
+    with open('GenControl/opcodes') as file:
         opcode_lines = file.readlines()
 except (FileNotFoundError, IndexError):
     exit("opcodes not found")
@@ -48,7 +50,7 @@ for op in opcode_lines:
 # print(opcodes)
 
 try:
-    with open('aluopcodes') as file:
+    with open('GenControl/aluopcodes') as file:
         aluop_lines = file.readlines()
 except (FileNotFoundError, IndexError):
     exit("aluopcodes not found")
@@ -75,6 +77,9 @@ PC = 0
 label = {}
 last_label = ''
 line_count = 0
+return_addrs = {}
+stack_ptr = 0xff00
+
 mem = bytearray([0 for _ in range(0x8000)])
 ################
 #  FIRST PASS  #
@@ -219,10 +224,53 @@ for line in lines:
     opcode = opcodes[op]['opcode']
     needs_alu = opcodes[op]['needs_alu']
     num_bytes = opcodes[op]['num_bytes']
-    param_size = num_bytes - int(needs_alu>0) - 1
+    param_size = num_bytes - int(needs_alu > 0) - 1
 
     mem[PC] = opcode
     PC += 1
+
+    if op == 'jsr':  # OP stklow stkhi pclow alu=D stklow+1 pchi jplo jhi
+        if stack_ptr > 0xffff:
+            print(f'Error: Run out of return addresses on line {line_count}')
+            exit(1)
+        addr = PC + 8
+        mem[PC] = stack_ptr & 0xff
+        PC += 1
+        mem[PC] = (stack_ptr >> 8) & 0xff
+        PC += 1
+        mem[PC] = addr & 0xff
+        PC += 1
+        mem[PC] = aluops['d']
+        PC += 1
+        mem[PC] = (stack_ptr + 1) & 0xff
+        PC += 1
+        mem[PC] = (addr >> 8) & 0xff
+        PC += 1
+        jump_addr = parse_number(first_param)
+        mem[PC] = jump_addr & 0xff
+        PC += 1
+        mem[PC] = (jump_addr >> 8) & 0xff
+        PC += 1
+        return_addrs[str(jump_addr)] = stack_ptr
+        print(f'Return address {addr:04x} stored at {stack_ptr:04x}')
+        stack_ptr += 2
+        continue
+
+    if op == 'rts':  # OP stklo stkhi stklo+1 ALU=D ALU=C
+        jump_addr = parse_number(first_param)
+        stk_ptr = return_addrs[str(jump_addr)]
+        mem[PC] = stk_ptr & 0xff
+        PC += 1
+        mem[PC] = (stk_ptr >> 8) & 0xff
+        PC += 1
+        mem[PC] = (stk_ptr + 1) & 0xff
+        PC += 1
+        mem[PC] = aluops['d']
+        PC += 1
+        mem[PC] = aluops['c']
+        PC += 1
+        print(f'Returning to address {jump_addr:04x} stored at {stk_ptr:04x}')
+        continue
 
     print(f'Opcode {op.upper()} = {opcode:02x}, alu {needs_alu}, param_size {param_size}')
     if needs_alu > 0:
@@ -239,7 +287,6 @@ for line in lines:
         PC += 1
 
     if first_param:
-        print(f'1st {first_param}')
         if param_size == 1:
             mem[PC] = parse_number(first_param) & 0xff
             PC += 1
@@ -248,8 +295,9 @@ for line in lines:
             PC += 1
             mem[PC] = (parse_number(first_param) >> 8) & 0xff
             PC += 1
-
+print('Return addresses')
+print(return_addrs)
 print('--- Writing to file ---')
-with open('instr.bin', 'wb') as file:
+with open('./Sim/instr.bin', 'wb') as file:
     file.write(mem)
 

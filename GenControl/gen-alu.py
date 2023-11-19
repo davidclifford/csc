@@ -120,7 +120,7 @@ opcodes = {
 
 #  Generate ALU opcodes for assembler
 
-with open('../aluopcodes', 'w') as aluops_file:
+with open('aluopcodes', 'w') as aluops_file:
     for op, mnemonic in opcodes.items():
         print(f'{op:02x} {mnemonic}')
         aluops_file.write(f'{op:02x} {mnemonic}\n')
@@ -252,7 +252,7 @@ for alu_op in range(32):
 if debug: debug_file.close()
 
 print('Writing binary file to alu.bin')
-with open('alu.bin', 'wb') as rom_f:
+with open('../Sim/alu.bin', 'wb') as rom_f:
     for b in alu_rom:
         ui16 = np.uint16(b)
         rom_f.write(ui16)
