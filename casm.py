@@ -80,14 +80,14 @@ line_count = 0
 return_addrs = {}
 stack_ptr = 0xff00
 
-mem = bytearray([0 for _ in range(0x8000)])
+mem = bytearray([0 for _ in range(0x10000)])
 ################
 #  FIRST PASS  #
 ################
 print('--- First Pass ---')
 for line in lines:
     line_count += 1
-    ln = line.lstrip().rstrip().replace(',', ' ')
+    ln = line.lstrip().rstrip()
     if len(ln) == 0:
         continue
     if ln.startswith('#'):
@@ -162,7 +162,7 @@ last_label = ''
 for line in lines:
     line_count += 1
 
-    ln = line.lstrip().rstrip().replace(',', ' ')
+    ln = line.lstrip().rstrip()
     if len(ln) == 0:
         continue
     if ln.startswith('#'):
@@ -176,7 +176,7 @@ for line in lines:
         ln = ln[len(ln.split(':')[0])+1:].lstrip()
         if len(ln) == 0:
             continue
-    print(f'Line {line_count:6} PC = {PC:04x} : {ln}')
+    print(f'-- Line {line_count:6} PC = {PC:04x} : {ln}')
 
     tokens = ln.split(' ')
     op = tokens[0].lower()
@@ -187,6 +187,8 @@ for line in lines:
         second_param = tokens[2]
     if len(tokens) > 3:
         third_param = tokens[3]
+    print(f'-- First {first_param}, Second {second_param}, Third {third_param}')
+
     if op == 'equ':
         continue
     if op == 'org':
@@ -270,6 +272,33 @@ for line in lines:
         mem[PC] = aluops['c']
         PC += 1
         print(f'Returning to address {jump_addr:04x} stored at {stk_ptr:04x}')
+        continue
+
+    if op == 'sti':  # OP ALUopStore Highbyte ALUopIndx (swap alu ops in byte stream)
+        aluopStore = aluops[first_param.lower()]
+        highByte = (parse_number(second_param) >> 8) & 0xff
+        aluopIndex = aluops[third_param.lower()]
+        mem[PC] = aluopIndex
+        PC += 1
+        mem[PC] = highByte
+        PC += 1
+        mem[PC] = aluopStore
+        PC += 1
+        continue
+
+    if op == 'stx':  # OP ALUopStore LowByte Highbyte ALUopIndx (swap alu ops byte stream)
+        aluopStore = aluops[first_param.lower()]
+        lowByte = parse_number(second_param) & 0xff
+        highByte = (parse_number(second_param) >> 8) & 0xff
+        aluopIndex = aluops[third_param.lower()]
+        mem[PC] = aluopIndex
+        PC += 1
+        mem[PC] = lowByte
+        PC += 1
+        mem[PC] = highByte
+        PC += 1
+        mem[PC] = aluopStore
+        PC += 1
         continue
 
     print(f'Opcode {op.upper()} = {opcode:02x}, alu {needs_alu}, param_size {param_size}')
