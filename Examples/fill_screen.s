@@ -13,9 +13,11 @@ xloop:
     STO B-1 y
     JGE yloop
 wait:
+    LDC C+1
     INA
     JPZ A wait
-    LDC C+1
+    MVB 'q'
+    JPZ A-B end
     JMP start
 end:
     BRK

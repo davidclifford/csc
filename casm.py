@@ -78,7 +78,7 @@ label = {}
 last_label = ''
 line_count = 0
 return_addrs = {}
-stack_ptr = 0xff00
+stack_ptr = 0xff00-2
 
 mem = bytearray([0 for _ in range(0x10000)])
 ################
@@ -90,7 +90,7 @@ for line in lines:
     ln = line.lstrip().rstrip()
     if len(ln) == 0:
         continue
-    if ln.startswith('#'):
+    if ln.startswith('#') or ln.startswith(';') or ln.startswith('//'):
         continue
 
     # Find labels
@@ -126,6 +126,7 @@ for line in lines:
             PC += len(first_param)
             if quote == '"':
                 PC += 1
+            continue
         if first_param.startswith('('):
             if not first_param.endswith(')'):
                 print(f'Missing closing ) on line {line_count} ')
@@ -165,7 +166,7 @@ for line in lines:
     ln = line.lstrip().rstrip()
     if len(ln) == 0:
         continue
-    if ln.startswith('#'):
+    if ln.startswith('#') or ln.startswith(';') or ln.startswith('//'):
         continue
 
     # Skip over labels
@@ -232,9 +233,15 @@ for line in lines:
     PC += 1
 
     if op == 'jsr':  # OP stklow stkhi pclow alu=D stklow+1 pchi jplo jhi
-        if stack_ptr > 0xffff:
-            print(f'Error: Run out of return addresses on line {line_count}')
-            exit(1)
+        jump_addr = parse_number(first_param)
+        if jump_addr not in return_addrs:
+            stack_ptr += 2
+            if stack_ptr > 0xffff:
+                print(f'Error: Run out of return addresses on line {line_count}')
+                exit(1)
+            return_addrs[jump_addr] = stack_ptr
+        else:
+            stack_ptr = return_addrs[jump_addr]
         addr = PC + 8
         mem[PC] = stack_ptr & 0xff
         PC += 1
@@ -248,19 +255,16 @@ for line in lines:
         PC += 1
         mem[PC] = (addr >> 8) & 0xff
         PC += 1
-        jump_addr = parse_number(first_param)
         mem[PC] = jump_addr & 0xff
         PC += 1
         mem[PC] = (jump_addr >> 8) & 0xff
         PC += 1
-        return_addrs[str(jump_addr)] = stack_ptr
         print(f'Return address {addr:04x} stored at {stack_ptr:04x}')
-        stack_ptr += 2
         continue
 
     if op == 'rts':  # OP stklo stkhi stklo+1 ALU=D ALU=C
         jump_addr = parse_number(first_param)
-        stk_ptr = return_addrs[str(jump_addr)]
+        stk_ptr = return_addrs[jump_addr]
         mem[PC] = stk_ptr & 0xff
         PC += 1
         mem[PC] = (stk_ptr >> 8) & 0xff
@@ -271,7 +275,7 @@ for line in lines:
         PC += 1
         mem[PC] = aluops['c']
         PC += 1
-        print(f'Returning to address {jump_addr:04x} stored at {stk_ptr:04x}')
+        print(f'Returning to address stored at {stk_ptr:04x}')
         continue
 
     if op == 'sti':  # OP ALUopStore Highbyte ALUopIndx (swap alu ops in byte stream)
