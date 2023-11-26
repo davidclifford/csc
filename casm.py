@@ -331,6 +331,7 @@ for line in lines:
 print('Return addresses')
 print(return_addrs)
 print('--- Writing to file ---')
+# Write bottom 32k for ROM
 with open('./Sim/instr.bin', 'wb') as file:
-    file.write(mem)
+    file.write(mem[:0x8000])
 
