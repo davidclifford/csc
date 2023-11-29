@@ -9,6 +9,16 @@ def usage():
 
 
 def parse_number(num):
+    if '+' in num:
+        nums = num.split('+')
+        n1 = parse_number(nums[0])
+        n2 = parse_number(nums[1])
+        return n1+n2
+    if '-' in num:
+        nums = num.split('-')
+        n1 = parse_number(nums[0])
+        n2 = parse_number(nums[1])
+        return n1-n2
     try:
         if num.startswith('$'):
             return int(num[1:], 16)
@@ -27,6 +37,9 @@ def parse_number(num):
         if num.startswith('>'):
             return (parse_number(num[1:]) >> 8) & 0xff
         if num.startswith('"') or num.startswith("'"):
+            qu = num[0]
+            if not num.endswith(qu):
+                print(f'Missing closing quote {qu} on line {line_count}')
             return ord(num[1:2]) & 0xff
     except ValueError:
         pass
@@ -62,23 +75,37 @@ for op in aluop_lines:
     aluops[function] = opcode
 print(aluops)
 
+# options & filename
+PC = 0x8000
+filename = None
+monitor = False
+for arg in sys.argv:
+    print(arg)
+    if arg.startswith('-'):
+        if arg[1] == 'm':
+            monitor = True
+            PC = 0
+    else:
+        filename = arg
+
 try:
-    filename = sys.argv[1]
     file = open(filename)
     lines = file.readlines()
     file.close()
 except FileNotFoundError:
-    exit(f"Source file {sys.argv[1]} not found")
+    exit(f"Source file {filename} not found")
 except IndexError:
     usage()
     exit()
 
-PC = 0
 label = {}
 last_label = ''
 line_count = 0
 return_addrs = {}
 stack_ptr = 0xff00-2
+exports = {}
+start_addr = 0x10000
+end_addr = 0
 
 mem = bytearray([0 for _ in range(0x10000)])
 ################
@@ -86,6 +113,11 @@ mem = bytearray([0 for _ in range(0x10000)])
 ################
 print('--- First Pass ---')
 for line in lines:
+    if PC < start_addr:
+        start_addr = PC
+    if PC > end_addr:
+        end_addr = PC
+
     line_count += 1
     ln = line.lstrip().rstrip()
     if len(ln) == 0:
@@ -112,7 +144,13 @@ for line in lines:
 
     tokens = ln.split(' ')
     op = tokens[0].lower()
+
+    if op == 'exp':
+        continue
+
     if op == 'org':
+        if PC == 0x8000:
+            start_addr = PC
         PC = parse_number(tokens[1])
         continue
 
@@ -157,7 +195,7 @@ for lab in label:
 # SECOND PASS #
 ###############
 print('--- Second Pass ---')
-PC = 0
+PC = 0 if monitor else 0x8000
 line_count = 0
 last_label = ''
 for line in lines:
@@ -190,6 +228,10 @@ for line in lines:
         third_param = tokens[3]
     print(f'-- First {first_param}, Second {second_param}, Third {third_param}')
 
+    if op == 'exp':
+        if first_param:
+            exports[first_param] = label[first_param]
+        continue
     if op == 'equ':
         continue
     if op == 'org':
@@ -328,10 +370,32 @@ for line in lines:
             PC += 1
             mem[PC] = (parse_number(first_param) >> 8) & 0xff
             PC += 1
-print('Return addresses')
-print(return_addrs)
-print('--- Writing to file ---')
-# Write bottom 32k for ROM
-with open('./Sim/instr.bin', 'wb') as file:
-    file.write(mem[:0x8000])
+if len(return_addrs) > 0:
+    print('--- Return addresses ---')
+    print(return_addrs)
+# Write bottom 32k for ROM if monitor
+if monitor:
+    print('--- Writing to instr.bin ---')
+    with open('./Sim/instr.bin', 'wb') as file:
+        file.write(mem[:0x8000])
+else:
+    # Write HEX file
+    print('--- Writing to hex file ---')
+    hexfile = filename.split('.')[0] + '.hex'
+    with open(hexfile, 'w') as f:
+        for addr in range(start_addr, end_addr):
+            if addr % 16 == 0:
+                f.write(f'C{addr:04x} ')
+            f.write(f'{mem[addr]:02x} ')
+            if addr % 16 == 15:
+                f.write('Z\n')
+        if addr % 16 != 15:
+            f.write('Z')
 
+# Write out exports
+if len(exports) > 0:
+    print('--- Writing exports to header file ---')
+    header = filename.split('.')[0]+'.h'
+    with open(header, 'w') as f:
+        for ex in exports:
+            f.write(f'{ex}: EQU ${exports[ex]:04x}\n')

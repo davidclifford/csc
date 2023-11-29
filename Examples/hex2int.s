@@ -1,6 +1,6 @@
     NOP
 digit1:
-    LOB hex1
+    LOB hex
     MVA $3f
     LDA A+B
     JPN A .hex
@@ -14,7 +14,7 @@ digit1:
     STO A*Blo num
 
 digit2:
-    LOB hex2
+    LOB hex+1
     MVA $3f
     LDA A+B
     JPN A .hex
@@ -34,8 +34,8 @@ digit2:
     OUT A
     BRK
 
-hex1: db '0'
-hex2: db '7'
+hex: dw '45'
+num: equ $f000
 
-org $8000
-num:  db $00
+    EXP hex
+    EXP num
