@@ -1,256 +1,256 @@
-00 NOP 0 1
-01 MVA 0 2
-02 MVB 0 2
-03 MVC 0 2
-04 MVD 0 2
-05 BNK 0 2
-06 X06 0 1
-07 X07 0 1
-08 X08 0 1
-09 X09 0 1
-0a X0a 0 1
-0b X0b 0 1
-0c X0c 0 1
-0d X0d 0 1
-0e X0e 0 1
-0f X0f 0 1
-10 X10 0 1
-11 LDA 1 2
-12 LDB 1 2
-13 LDC 1 2
-14 LDD 1 2
-15 STO 1 4
-16 LXA 2 3
-17 LXB 2 3
-18 LXC 2 3
-19 LXD 2 3
-1a LIA 2 4
-1b LIB 2 4
-1c LIC 2 4
-1d LID 2 4
-1e STI 3 3
-1f STX 3 5
-20 JMP 0 3
-21 JTX 0 3
-22 JRX 0 3
-23 JPZ 1 4
-24 JPN 1 4
-25 JEQ 0 3
-26 JNE 0 3
-27 JGE 0 3
-28 JLT 0 3
-29 JPN 1 4
-2a JPP 1 4
-2b JPV 1 4
-2c JNV 1 4
-2d TST 1 2
-2e X2e 0 1
-2f X2f 0 1
-30 INA 0 1
-31 INB 0 1
-32 INC 0 1
-33 IND 0 1
-34 INM 0 3
-35 OUT 1 2
-36 CHR 0 2
-37 X37 0 1
-38 X38 0 1
-39 X39 0 1
-3a X3a 0 1
-3b X3b 0 1
-3c X3c 0 1
-3d X3d 0 1
-3e X3e 0 1
-3f X3f 0 1
-40 JSR 0 9
-41 RTS 0 6
-42 X42 0 1
-43 X43 0 1
-44 X44 0 1
-45 X45 0 1
-46 X46 0 1
-47 X47 0 1
-48 X48 0 1
-49 X49 0 1
-4a X4a 0 1
-4b X4b 0 1
-4c X4c 0 1
-4d X4d 0 1
-4e X4e 0 1
-4f X4f 0 1
-50 LOA 0 3
-51 LOB 0 3
-52 LOC 0 3
-53 LOD 0 3
-54 X54 0 1
-55 X55 0 1
-56 X56 0 1
-57 X57 0 1
-58 X58 0 1
-59 X59 0 1
-5a X5a 0 1
-5b X5b 0 1
-5c X5c 0 1
-5d X5d 0 1
-5e X5e 0 1
-5f X5f 0 1
-60 X60 0 1
-61 X61 0 1
-62 X62 0 1
-63 X63 0 1
-64 X64 0 1
-65 X65 0 1
-66 X66 0 1
-67 X67 0 1
-68 X68 0 1
-69 X69 0 1
-6a X6a 0 1
-6b X6b 0 1
-6c X6c 0 1
-6d X6d 0 1
-6e X6e 0 1
-6f X6f 0 1
-70 X70 0 1
-71 X71 0 1
-72 X72 0 1
-73 X73 0 1
-74 X74 0 1
-75 X75 0 1
-76 X76 0 1
-77 X77 0 1
-78 X78 0 1
-79 X79 0 1
-7a X7a 0 1
-7b X7b 0 1
-7c X7c 0 1
-7d X7d 0 1
-7e X7e 0 1
-7f X7f 0 1
-80 X80 0 1
-81 X81 0 1
-82 X82 0 1
-83 X83 0 1
-84 X84 0 1
-85 X85 0 1
-86 X86 0 1
-87 X87 0 1
-88 X88 0 1
-89 X89 0 1
-8a X8a 0 1
-8b X8b 0 1
-8c X8c 0 1
-8d X8d 0 1
-8e X8e 0 1
-8f X8f 0 1
-90 X90 0 1
-91 X91 0 1
-92 X92 0 1
-93 X93 0 1
-94 X94 0 1
-95 X95 0 1
-96 X96 0 1
-97 X97 0 1
-98 X98 0 1
-99 X99 0 1
-9a X9a 0 1
-9b X9b 0 1
-9c X9c 0 1
-9d X9d 0 1
-9e X9e 0 1
-9f X9f 0 1
-a0 Xa0 0 1
-a1 Xa1 0 1
-a2 Xa2 0 1
-a3 Xa3 0 1
-a4 Xa4 0 1
-a5 Xa5 0 1
-a6 Xa6 0 1
-a7 Xa7 0 1
-a8 Xa8 0 1
-a9 Xa9 0 1
-aa Xaa 0 1
-ab Xab 0 1
-ac Xac 0 1
-ad Xad 0 1
-ae Xae 0 1
-af Xaf 0 1
-b0 Xb0 0 1
-b1 Xb1 0 1
-b2 Xb2 0 1
-b3 Xb3 0 1
-b4 Xb4 0 1
-b5 Xb5 0 1
-b6 Xb6 0 1
-b7 Xb7 0 1
-b8 Xb8 0 1
-b9 Xb9 0 1
-ba Xba 0 1
-bb Xbb 0 1
-bc Xbc 0 1
-bd Xbd 0 1
-be Xbe 0 1
-bf Xbf 0 1
-c0 Xc0 0 1
-c1 Xc1 0 1
-c2 Xc2 0 1
-c3 Xc3 0 1
-c4 Xc4 0 1
-c5 Xc5 0 1
-c6 Xc6 0 1
-c7 Xc7 0 1
-c8 Xc8 0 1
-c9 Xc9 0 1
-ca Xca 0 1
-cb Xcb 0 1
-cc Xcc 0 1
-cd Xcd 0 1
-ce Xce 0 1
-cf Xcf 0 1
-d0 Xd0 0 1
-d1 Xd1 0 1
-d2 Xd2 0 1
-d3 Xd3 0 1
-d4 Xd4 0 1
-d5 Xd5 0 1
-d6 Xd6 0 1
-d7 Xd7 0 1
-d8 Xd8 0 1
-d9 Xd9 0 1
-da Xda 0 1
-db Xdb 0 1
-dc Xdc 0 1
-dd Xdd 0 1
-de Xde 0 1
-df Xdf 0 1
-e0 Xe0 0 1
-e1 Xe1 0 1
-e2 Xe2 0 1
-e3 Xe3 0 1
-e4 Xe4 0 1
-e5 Xe5 0 1
-e6 Xe6 0 1
-e7 Xe7 0 1
-e8 Xe8 0 1
-e9 Xe9 0 1
-ea Xea 0 1
-eb Xeb 0 1
-ec Xec 0 1
-ed Xed 0 1
-ee Xee 0 1
-ef Xef 0 1
-f0 Xf0 0 1
-f1 Xf1 0 1
-f2 Xf2 0 1
-f3 Xf3 0 1
-f4 Xf4 0 1
-f5 Xf5 0 1
-f6 Xf6 0 1
-f7 Xf7 0 1
-f8 Xf8 0 1
-f9 Xf9 0 1
-fa Xfa 0 1
-fb Xfb 0 1
-fc Xfc 0 1
-fd Xfd 0 1
-fe Xfe 0 1
-ff BRK 0 1
+00 NOP 0 1 0
+01 MVA 0 2 1
+02 MVB 0 2 1
+03 MVC 0 2 1
+04 MVD 0 2 1
+05 BNK 0 2 1
+06 X06 0 1 0
+07 X07 0 1 0
+08 X08 0 1 0
+09 X09 0 1 0
+0a X0a 0 1 0
+0b X0b 0 1 0
+0c X0c 0 1 0
+0d X0d 0 1 0
+0e X0e 0 1 0
+0f X0f 0 1 0
+10 X10 0 1 0
+11 LDA 1 2 1
+12 LDB 1 2 1
+13 LDC 1 2 1
+14 LDD 1 2 1
+15 STO 1 4 2
+16 LXA 2 3 2
+17 LXB 2 3 2
+18 LXC 2 3 2
+19 LXD 2 3 2
+1a LIA 2 4 2
+1b LIB 2 4 2
+1c LIC 2 4 2
+1d LID 2 4 2
+1e STI 3 4 3
+1f STX 3 5 3
+20 JMP 0 3 1
+21 JTX 0 3 1
+22 JRX 0 3 1
+23 JPZ 1 4 2
+24 JPN 1 4 2
+25 JEQ 0 3 1
+26 JNE 0 3 1
+27 JGE 0 3 1
+28 JLT 0 3 1
+29 JPN 1 4 1
+2a JPP 1 4 1
+2b JPV 1 4 1
+2c JNV 1 4 1
+2d TST 1 2 1
+2e X2e 0 1 0
+2f X2f 0 1 0
+30 INA 0 1 0
+31 INB 0 1 0
+32 INC 0 1 0
+33 IND 0 1 0
+34 INM 0 3 1
+35 OUT 1 2 1
+36 CHR 0 2 1
+37 X37 0 1 0
+38 X38 0 1 0
+39 X39 0 1 0
+3a X3a 0 1 0
+3b X3b 0 1 0
+3c X3c 0 1 0
+3d X3d 0 1 0
+3e X3e 0 1 0
+3f X3f 0 1 0
+40 JSR 0 9 1
+41 RTS 0 6 1
+42 X42 0 1 0
+43 X43 0 1 0
+44 X44 0 1 0
+45 X45 0 1 0
+46 X46 0 1 0
+47 X47 0 1 0
+48 X48 0 1 0
+49 X49 0 1 0
+4a X4a 0 1 0
+4b X4b 0 1 0
+4c X4c 0 1 0
+4d X4d 0 1 0
+4e X4e 0 1 0
+4f X4f 0 1 0
+50 LOA 0 3 1
+51 LOB 0 3 1
+52 LOC 0 3 1
+53 LOD 0 3 1
+54 X54 0 1 0
+55 X55 0 1 0
+56 X56 0 1 0
+57 X57 0 1 0
+58 X58 0 1 0
+59 X59 0 1 0
+5a X5a 0 1 0
+5b X5b 0 1 0
+5c X5c 0 1 0
+5d X5d 0 1 0
+5e X5e 0 1 0
+5f X5f 0 1 0
+60 X60 0 1 0
+61 X61 0 1 0
+62 X62 0 1 0
+63 X63 0 1 0
+64 X64 0 1 0
+65 X65 0 1 0
+66 X66 0 1 0
+67 X67 0 1 0
+68 X68 0 1 0
+69 X69 0 1 0
+6a X6a 0 1 0
+6b X6b 0 1 0
+6c X6c 0 1 0
+6d X6d 0 1 0
+6e X6e 0 1 0
+6f X6f 0 1 0
+70 X70 0 1 0
+71 X71 0 1 0
+72 X72 0 1 0
+73 X73 0 1 0
+74 X74 0 1 0
+75 X75 0 1 0
+76 X76 0 1 0
+77 X77 0 1 0
+78 X78 0 1 0
+79 X79 0 1 0
+7a X7a 0 1 0
+7b X7b 0 1 0
+7c X7c 0 1 0
+7d X7d 0 1 0
+7e X7e 0 1 0
+7f X7f 0 1 0
+80 X80 0 1 0
+81 X81 0 1 0
+82 X82 0 1 0
+83 X83 0 1 0
+84 X84 0 1 0
+85 X85 0 1 0
+86 X86 0 1 0
+87 X87 0 1 0
+88 X88 0 1 0
+89 X89 0 1 0
+8a X8a 0 1 0
+8b X8b 0 1 0
+8c X8c 0 1 0
+8d X8d 0 1 0
+8e X8e 0 1 0
+8f X8f 0 1 0
+90 X90 0 1 0
+91 X91 0 1 0
+92 X92 0 1 0
+93 X93 0 1 0
+94 X94 0 1 0
+95 X95 0 1 0
+96 X96 0 1 0
+97 X97 0 1 0
+98 X98 0 1 0
+99 X99 0 1 0
+9a X9a 0 1 0
+9b X9b 0 1 0
+9c X9c 0 1 0
+9d X9d 0 1 0
+9e X9e 0 1 0
+9f X9f 0 1 0
+a0 Xa0 0 1 0
+a1 Xa1 0 1 0
+a2 Xa2 0 1 0
+a3 Xa3 0 1 0
+a4 Xa4 0 1 0
+a5 Xa5 0 1 0
+a6 Xa6 0 1 0
+a7 Xa7 0 1 0
+a8 Xa8 0 1 0
+a9 Xa9 0 1 0
+aa Xaa 0 1 0
+ab Xab 0 1 0
+ac Xac 0 1 0
+ad Xad 0 1 0
+ae Xae 0 1 0
+af Xaf 0 1 0
+b0 Xb0 0 1 0
+b1 Xb1 0 1 0
+b2 Xb2 0 1 0
+b3 Xb3 0 1 0
+b4 Xb4 0 1 0
+b5 Xb5 0 1 0
+b6 Xb6 0 1 0
+b7 Xb7 0 1 0
+b8 Xb8 0 1 0
+b9 Xb9 0 1 0
+ba Xba 0 1 0
+bb Xbb 0 1 0
+bc Xbc 0 1 0
+bd Xbd 0 1 0
+be Xbe 0 1 0
+bf Xbf 0 1 0
+c0 Xc0 0 1 0
+c1 Xc1 0 1 0
+c2 Xc2 0 1 0
+c3 Xc3 0 1 0
+c4 Xc4 0 1 0
+c5 Xc5 0 1 0
+c6 Xc6 0 1 0
+c7 Xc7 0 1 0
+c8 Xc8 0 1 0
+c9 Xc9 0 1 0
+ca Xca 0 1 0
+cb Xcb 0 1 0
+cc Xcc 0 1 0
+cd Xcd 0 1 0
+ce Xce 0 1 0
+cf Xcf 0 1 0
+d0 Xd0 0 1 0
+d1 Xd1 0 1 0
+d2 Xd2 0 1 0
+d3 Xd3 0 1 0
+d4 Xd4 0 1 0
+d5 Xd5 0 1 0
+d6 Xd6 0 1 0
+d7 Xd7 0 1 0
+d8 Xd8 0 1 0
+d9 Xd9 0 1 0
+da Xda 0 1 0
+db Xdb 0 1 0
+dc Xdc 0 1 0
+dd Xdd 0 1 0
+de Xde 0 1 0
+df Xdf 0 1 0
+e0 Xe0 0 1 0
+e1 Xe1 0 1 0
+e2 Xe2 0 1 0
+e3 Xe3 0 1 0
+e4 Xe4 0 1 0
+e5 Xe5 0 1 0
+e6 Xe6 0 1 0
+e7 Xe7 0 1 0
+e8 Xe8 0 1 0
+e9 Xe9 0 1 0
+ea Xea 0 1 0
+eb Xeb 0 1 0
+ec Xec 0 1 0
+ed Xed 0 1 0
+ee Xee 0 1 0
+ef Xef 0 1 0
+f0 Xf0 0 1 0
+f1 Xf1 0 1 0
+f2 Xf2 0 1 0
+f3 Xf3 0 1 0
+f4 Xf4 0 1 0
+f5 Xf5 0 1 0
+f6 Xf6 0 1 0
+f7 Xf7 0 1 0
+f8 Xf8 0 1 0
+f9 Xf9 0 1 0
+fa Xfa 0 1 0
+fb Xfb 0 1 0
+fc Xfc 0 1 0
+fd Xfd 0 1 0
+fe Xfe 0 1 0
+ff BRK 0 1 0

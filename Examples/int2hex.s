@@ -1,4 +1,7 @@
-    NOP
+;
+; Convert 8-bit number to 2 digit hex string
+;
+    ORG $9000
 int2hex:
     LOA num
     MVB 16
@@ -28,3 +31,5 @@ int2hex:
     BRK
 
 num: db $9f
+dum: db (20)
+dum2: db
