@@ -1,0 +1,1 @@
+prompt: EQU $0016

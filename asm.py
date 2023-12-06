@@ -46,14 +46,15 @@ except (FileNotFoundError, IndexError):
 ep = 0
 line = 1
 PC = 0x8000
+stack_ptr = 0xfa00
 if args.monitor:
     PC = 0
+    stack_ptr = 0xfb00
 start_addr = 0x10000
 end_addr = 0
 label = {}
 last_label = ''
 return_addrs = {}
-stack_ptr = 0xff00-2
 exports = {}
 newline = False
 mem = bytearray([0 for _ in range(0x10000)])
@@ -180,9 +181,12 @@ while size := find_token():
             error(f'Label {lab} already exists')
         label[lab] = PC
 
-    elif token == 'exp' or token == 'imp':
-        continue
-
+    elif token == 'exp':
+        ep += size
+        size = find_token()
+    elif token == 'imp':
+        ep += size
+        size = find_token()
     elif token == 'org':
         ep += size
         size = find_token()
@@ -262,11 +266,14 @@ while size := find_token():
         if not token.startswith('.'):
             last_label = op[:-1]
     elif token == 'equ' or token == 'imp':
-        pass
+        ep += size
+        size = find_token()
     elif token == 'exp':
         size = find_token()
         param = src[ep:ep+size]
         exports[param] = label[param]
+        if label[param] in return_addrs:
+            exports[param+'_ret'] = return_addrs[label[param]]
         ep += size
     elif token == 'org':
         size = find_token()
@@ -282,13 +289,11 @@ while size := find_token():
         size = find_token()
         while not newline:
             param = src[ep:ep + size]
-            print(f'--- param {param}')
             ep += size
             if param.startswith('"') or param.startswith("'"):
                 quote = param[0]
                 string = param[1:-1]
                 special = False
-                print(f'=== string [{string}]')
                 for c in string:
                     if c == '\\':
                         special = True
@@ -315,6 +320,59 @@ while size := find_token():
                     mem[PC] = (parse_number(param) >> 8) & 0xff
                     PC += 1
             size = find_token()
+    elif op == 'jsr':  # OP stklow stkhi pclow alu=D stklow+1 pchi jplo jhi
+        mem[PC] = opcodes[op]
+        PC += 1
+        size = find_token()
+        param = src[ep:ep + size]
+        ep += size
+        jump_addr = parse_number(param)
+        if not args.monitor and jump_addr < 0x8000:
+            param = src[ep:ep + size]
+            ep += size
+            ret_addr = parse_number(param)
+        elif jump_addr not in return_addrs:
+            stack_ptr -= 2
+            return_addrs[jump_addr] = stack_ptr
+            ret_addr = stack_ptr
+        else:
+            ret_addr = return_addrs[jump_addr]
+        addr = PC + 8
+        mem[PC] = ret_addr & 0xff
+        PC += 1
+        mem[PC] = (ret_addr >> 8) & 0xff
+        PC += 1
+        mem[PC] = addr & 0xff
+        PC += 1
+        mem[PC] = aluops['d']
+        PC += 1
+        mem[PC] = (ret_addr + 1) & 0xff
+        PC += 1
+        mem[PC] = (addr >> 8) & 0xff
+        PC += 1
+        mem[PC] = jump_addr & 0xff
+        PC += 1
+        mem[PC] = (jump_addr >> 8) & 0xff
+        PC += 1
+        print(f'Return address {addr:04x} stored at {ret_addr:04x}')
+    elif op == 'rts':  # OP stklo stkhi stklo+1 ALU=D ALU=C
+        size = find_token()
+        param = src[ep:ep + size]
+        ep += size
+        jump_addr = parse_number(param)
+        stk_ptr = return_addrs[jump_addr]
+        mem[PC] = stk_ptr & 0xff
+        PC += 1
+        mem[PC] = (stk_ptr >> 8) & 0xff
+        PC += 1
+        mem[PC] = (stk_ptr + 1) & 0xff
+        PC += 1
+        mem[PC] = aluops['d']
+        PC += 1
+        mem[PC] = aluops['c']
+        PC += 1
+        print(f'Returning to address stored at {stk_ptr:04x}')
+
     # Store Reg at address indexed by Index-reg
     elif token == 'stx':  # OP ALUopStore LowByte Highbyte ALUopIndx (swap alu ops byte stream)
         mem[PC] = opcodes[token]['opcode']
@@ -392,7 +450,14 @@ while size := find_token():
                 mem[PC] = (parse_number(param1) >> 8) & 0xff
                 PC += 1
 
-print(f'Start {start_addr:04x}, End {end_addr:04x}')
+print(f'--- Start {start_addr:04x}, End {end_addr:04x} ---')
+if exports:
+    exp_filename = filename[:-2] + '.h'
+    print(f'--- Writing Exports to {exp_filename}---')
+    with open(exp_filename, 'w') as file:
+        for ex in exports:
+            print(f'\t{ex}: ${exports[ex]:04x}')
+            file.write(f'{ex}: EQU ${exports[ex]:04x}')
 
 if args.monitor:
     print('--- Writing to instr.bin ---')

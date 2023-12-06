@@ -102,6 +102,4 @@ usage: db "Usage: D dump, V video dump, C change, R run, X clear/reset, ? help\n
 ORG $FC00
 cmdline: db (16)
 
-
-
-
+exp prompt
