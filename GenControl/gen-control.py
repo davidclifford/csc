@@ -73,7 +73,8 @@ JP_Tx = 0x3 << 6
 JP_Rx = 0x4 << 6
 JP_Always = 0x5 << 6
 
-# Other (9-12 spare)
+# Other (9-11 spare)
+ALone = 1 << 12
 ARena = 1 << 13
 PCinc = 1 << 14
 uReset = 1 << 15
@@ -568,7 +569,7 @@ for opcode in range(256):
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x2d:
-            mnemonic = 'TST'  # Jump if no overflow
+            mnemonic = 'TST'  # Test eg A-B and set flags
             aluop = First
             num_bytes = 2
             num_args = 1
@@ -627,6 +628,11 @@ for opcode in range(256):
             ctrl = MEMresult | PCinc | IOload | uReset
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
+        elif opcode == 0xfe:
+            mnemonic = 'HLT'
+            ctrl = uReset
+            step = instruction(mnemonic, opcode, step, flags, ctrl)
+
         elif opcode == 0xff:
             mnemonic = 'BRK'
             ctrl = uReset
@@ -635,7 +641,7 @@ for opcode in range(256):
 # JSR and RTS
         elif opcode == 0x40:
             mnemonic = 'JSR'  # 12 steps - destroys D
-            num_bytes = 9 # OP stklow stkhi pclow alu=D stklow+1 pchi jplo jhi
+            num_bytes = 9  # OP stklow stkhi pclow alu=D stklow+1 pchi jplo jhi
             num_args = 1
             ctrl = MEMresult | PCinc | ALload
             step = instruction(mnemonic, opcode, step, flags, ctrl)
@@ -661,7 +667,7 @@ for opcode in range(256):
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x41:
-            mnemonic = 'RTS' # 11 Steps - destroys C and D
+            mnemonic = 'RTS'  # 11 Steps - destroys C and D
             num_bytes = 6  # OP stklo stkhi stklo+1 ALU=D ALU=C
             num_args = 1
             ctrl = MEMresult | PCinc | ALload

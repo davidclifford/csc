@@ -252,5 +252,5 @@ fa Xfa 0 1 0
 fb Xfb 0 1 0
 fc Xfc 0 1 0
 fd Xfd 0 1 0
-fe Xfe 0 1 0
+fe HLT 0 1 0
 ff BRK 0 1 0

@@ -57,7 +57,7 @@ opcodes = {
     Zero: '0',
     One: '1',
 
-    ABLo: 'A*Blo',
+    ABLo: 'A*B',
     ABHi: 'A*Bhi',
     AdivB: 'A/B',
     AmodB: 'A%B',
@@ -86,7 +86,7 @@ opcodes = {
     CD | BmA: 'D-C',
     CD | BmAm1: 'D-C-1',
 
-    CD | ABLo: 'C*Dlo',
+    CD | ABLo: 'C*D',
     CD | ABHi: 'C*Dhi',
     CD | AdivB: 'C/D',
     CD | AmodB: 'C%D',
@@ -127,7 +127,7 @@ with open('aluopcodes', 'w') as aluops_file:
 
 op = ['A', 'A+1', 'B', 'B+1', 'A', 'A-1', 'B', 'B-1']
 op += ['A+B', 'A+B+1', 'A-B', 'A-B-1', 'B-A', 'B-A-1', 'ZERO', 'ONE']
-op += ['A*Bl', 'A*Bh', 'A/B', 'A%B', 'A|B', 'A&B', 'A^B', 'AB/10']
+op += ['A*B', 'A*Bh', 'A/B', 'A%B', 'A|B', 'A&B', 'A^B', 'AB/10']
 op += ['AB%10', '!A', '!B', '-A', '-B', 'Spare1', 'Spare2', 'Spare3']
 
 FL_C = 0x100

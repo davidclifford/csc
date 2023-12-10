@@ -14,7 +14,7 @@
 0d B-A-1
 0e 0
 0f 1
-10 A*Blo
+10 A*B
 11 A*Bhi
 12 A/B
 13 A%B
@@ -41,7 +41,7 @@
 2b C-D-1
 2c D-C
 2d D-C-1
-30 C*Dlo
+30 C*D
 31 C*Dhi
 32 C/D
 33 C%D

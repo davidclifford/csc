@@ -320,7 +320,7 @@ while size := find_token():
                     mem[PC] = (parse_number(param) >> 8) & 0xff
                     PC += 1
             size = find_token()
-    elif op == 'jsr':  # OP stklow stkhi pclow alu=D stklow+1 pchi jplo jhi
+    elif op == 'jsr':  # OP stklow stkhi pclow alu=D [stklow+1] pchi jplo jhi
         mem[PC] = opcodes[op]
         PC += 1
         size = find_token()
