@@ -28,8 +28,8 @@
 1b LIB 2 4 2
 1c LIC 2 4 2
 1d LID 2 4 2
-1e STI 3 4 3
-1f STX 3 5 3
+1e STX 3 4 3
+1f STI 3 5 3
 20 JMP 0 3 1
 21 JTX 0 3 1
 22 JRX 0 3 1

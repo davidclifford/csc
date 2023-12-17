@@ -5,8 +5,8 @@ start:
     LDA A+B
     MVC $12
     MVD $34
-    LDC C+D+
+    LDC C+D
     OUT C
     OUT A
-    BRK
+    HLT
 end:

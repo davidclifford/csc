@@ -1,1 +1,1 @@
-prompt: EQU $0016
+Prompt: EQU $0016Hex2Int8: EQU $01e0Hex2Int8_ret: EQU $fcfcHex2Int16: EQU $0160Hex2Int16_ret: EQU $fcfe__addr: EQU $fd10__hex: EQU $fd12__int16: EQU $fd16__num: EQU $fd18

@@ -347,7 +347,7 @@ for opcode in range(256):
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x1e:
-            mnemonic = 'STI'
+            mnemonic = 'STX'
             num_bytes = 4
             num_args = 3
             aluop = First_Last
@@ -363,7 +363,7 @@ for opcode in range(256):
             step = instruction(mnemonic, opcode, step, flags, ctrl)
 
         elif opcode == 0x1f:
-            mnemonic = 'STX'
+            mnemonic = 'STI'
             num_bytes = 5
             num_args = 3
             aluop = First_Last

@@ -148,7 +148,7 @@ def flags_to_string(flags):
     return f
 
 
-debug = False
+debug = True
 if debug: debug_file = open('alu_debug', 'w')
 
 print('Calculating ALU ops...')

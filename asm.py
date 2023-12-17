@@ -46,10 +46,10 @@ except (FileNotFoundError, IndexError):
 ep = 0
 line = 1
 PC = 0x8000
-stack_ptr = 0xfa00
+stack_ptr = 0xfb00
 if args.monitor:
     PC = 0
-    stack_ptr = 0xfb00
+    stack_ptr = 0xfd00
 start_addr = 0x10000
 end_addr = 0
 label = {}
@@ -198,12 +198,16 @@ while size := find_token():
     # DB and DW
     elif token == 'db' or token == 'dw':
         if token == 'dw':
+            pc = PC
             PC = (PC+1) & 0xFFFE
+            # Adjust label to word boundary (hack)
+            if label[last_label] == pc:
+                label[last_label] = PC
         ep += size
         size = find_token()
+        nl = newline
         while not newline:
             token = src[ep:ep+size]
-            # print(f'DB/W [{token}]')
             if token.startswith("'") or token.startswith('"'):
                 for c in token[1:-1]:
                     if c != '\\':
@@ -218,6 +222,9 @@ while size := find_token():
                 PC += (1 if op.lower() == 'db' else 2)
             ep += size
             size = find_token()
+        if nl:
+            PC += (1 if op.lower() == 'db' else 2)
+
         ep -= size
 
     elif token == 'pag':
@@ -233,7 +240,7 @@ while size := find_token():
         PC += opcodes[token]['num_bytes']
         # Consume trailing arguments
         num_args = opcodes[token]['num_args']
-        print(f'--- OP {op} num_args {num_args}')
+        print(f'--- OP {op}, num_args {num_args}, bytes {opcodes[token]["num_bytes"]}')
         for _ in range(num_args):
             ep += size
             size = find_token()
@@ -320,13 +327,14 @@ while size := find_token():
                     mem[PC] = (parse_number(param) >> 8) & 0xff
                     PC += 1
             size = find_token()
-    elif op == 'jsr':  # OP stklow stkhi pclow alu=D [stklow+1] pchi jplo jhi
-        mem[PC] = opcodes[op]
+    elif token == 'jsr':  # OP stklow stkhi pclow alu=D [stklow+1] pchi jplo jhi
+        mem[PC] = opcodes[token]['opcode']
         PC += 1
         size = find_token()
         param = src[ep:ep + size]
         ep += size
         jump_addr = parse_number(param)
+        print(f'\tJUMP {jump_addr:04x}')
         if not args.monitor and jump_addr < 0x8000:
             param = src[ep:ep + size]
             ep += size
@@ -337,7 +345,9 @@ while size := find_token():
             ret_addr = stack_ptr
         else:
             ret_addr = return_addrs[jump_addr]
+        print(f'\tRET {ret_addr:04x}')
         addr = PC + 8
+        print(f'\tBACK {addr:04x}')
         mem[PC] = ret_addr & 0xff
         PC += 1
         mem[PC] = (ret_addr >> 8) & 0xff
@@ -355,12 +365,19 @@ while size := find_token():
         mem[PC] = (jump_addr >> 8) & 0xff
         PC += 1
         print(f'Return address {addr:04x} stored at {ret_addr:04x}')
-    elif op == 'rts':  # OP stklo stkhi stklo+1 ALU=D ALU=C
+    elif token == 'rts':  # OP stklo stkhi stklo+1 ALU=D ALU=C
         size = find_token()
         param = src[ep:ep + size]
         ep += size
         jump_addr = parse_number(param)
+
+        if jump_addr not in return_addrs:
+            stack_ptr -= 2
+            return_addrs[jump_addr] = stack_ptr
         stk_ptr = return_addrs[jump_addr]
+
+        mem[PC] = opcodes[token]['opcode']
+        PC += 1
         mem[PC] = stk_ptr & 0xff
         PC += 1
         mem[PC] = (stk_ptr >> 8) & 0xff
@@ -374,7 +391,7 @@ while size := find_token():
         print(f'Returning to address stored at {stk_ptr:04x}')
 
     # Store Reg at address indexed by Index-reg
-    elif token == 'stx':  # OP ALUopStore LowByte Highbyte ALUopIndx (swap alu ops byte stream)
+    elif token == 'sti':  # OP ALUopStore LowByte Highbyte ALUopIndx (swap alu ops byte stream)
         mem[PC] = opcodes[token]['opcode']
         PC += 1
         size = find_token();  reg = src[ep:ep+size]; ep += size
@@ -389,7 +406,7 @@ while size := find_token():
         mem[PC] = lowByte; PC += 1
         mem[PC] = highByte; PC += 1
         mem[PC] = aluopStore; PC += 1
-    elif token == 'sti':  # OP ALUopStore Highbyte ALUopIndx (swap alu ops in byte stream)
+    elif token == 'stx':  # OP ALUopStore Highbyte ALUopIndx (swap alu ops in byte stream)
         mem[PC] = opcodes[token]['opcode']
         PC += 1
         size = find_token();  reg = src[ep:ep+size]; ep += size

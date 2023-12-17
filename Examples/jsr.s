@@ -10,7 +10,7 @@ ret:
     CHR 'F'
     JSR printb
     CHR 'G'
-    BRK
+    HLT
 
 printb:
     CHR 'B'
@@ -19,5 +19,4 @@ printb:
 printd:
     CHR 'D'
     RTS printd
-
 end:

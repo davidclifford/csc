@@ -7,10 +7,10 @@ reset:
     MVB welcome
 .loop:
     LXA >welcome,B
-    JPZ A prompt
+    JPZ A Prompt
     OUT A LDB B+1
     JMP .loop
-prompt:
+Prompt:
     CHR '>'
     CHR ' '
     MVD cmdline
@@ -21,7 +21,7 @@ prompt:
     TST A-B
     JEQ .bs
     OUT A
-    STI A cmdline,D
+    STX A cmdline,D
     LDD D+1
     MVB '\n'
     TST A-B
@@ -43,7 +43,7 @@ do_command:
 # New line
     MVB '\n'
     TST A-B
-    JEQ prompt
+    JEQ Prompt
 # Help ?
     MVB '?'
     TST A-B
@@ -71,7 +71,7 @@ do_command:
     MVB 'x'
     TST A-B
     JEQ reset
-    JMP prompt
+    JMP Prompt
 
 change_command:
     STO 0 __addr
@@ -89,7 +89,7 @@ change_command:
     LDD D+1
     LXA >cmdline,D
     STO A __hex+3
-;    JSR Hex2Int16
+    JSR Hex2Int16
 ; Store addess
     LOA __num
     STO A __addr
@@ -127,43 +127,131 @@ change_command:
     JEQ .end
     STO A __hex+1
 ; Convert Hex to Byte
-;    JSR Hex2Int8
+    JSR Hex2Int8
 ; Store number in mem poined to by __addr (little endian)
     LOA __num
     LOB __addr
-    STX A __addr+1,B
+    STI A __addr+1,B
 .next:
     LOA __addr
     LOB __addr+1
-    STO A+1 __addr
-    STO B+ __addr+1
+    LDA A+1
+    LDB B+
+    STO A __addr
+    STO B __addr+1
     JMP .loop
 .end:
-    JMP prompt
+    CHR '\n'
+    JMP Prompt
 
 dump_command:
     CHR 'D'
-    JMP prompt
+    JMP Prompt
 video_command:
     CHR 'V'
-    JMP prompt
+    JMP Prompt
 run_command:
     CHR 'R'
-    JMP prompt
+    JMP Prompt
 usage_cmd:
     MVB usage
 .loop:
     LXA >usage B
-    JPZ A prompt
+    JPZ A Prompt
     JRX .
     OUT A
     LDB B+1
     JMP .loop
 
 Hex2Int16:
+    STO 0 __num
+    STO 0 __num+1
+    LOA __hex
+    MVB $20
+    LDA A|B
+    MVB '0'
+    LDA A-B
+    MVB 10
+    TST A-B
+    JLT .digit
+    MVB 39
+    LDA A-B
+.digit:
+    MVB 16
+    STO A*B __num+1
+
+    LOA __hex+1
+    MVB $20
+    LDA A|B
+    MVB '0'
+    LDA A-B
+    MVB 10
+    TST A-B
+    JLT .digit2
+    MVB 39
+    LDA A-B
+.digit2:
+    LOB __num+1
+    STO A|B __num+1
+
+    LOA __hex+2
+    MVB $20
+    LDA A|B
+    MVB '0'
+    LDA A-B
+    MVB 10
+    TST A-B
+    JLT .digit3
+    MVB 39
+    LDA A-B
+.digit3:
+    MVB 16
+    STO A*B __num
+
+    LOA __hex+3
+    MVB $20
+    LDA A|B
+    MVB '0'
+    LDA A-B
+    MVB 10
+    TST A-B
+    JLT .digit4
+    MVB 39
+    LDA A-B
+.digit4:
+    LOB __num
+    STO A|B __num
     RTS Hex2Int16
+
 Hex2Int8:
-;    RTS Hex2Int8
+    STO 0 __num
+    LOA __hex
+    MVB $20
+    LDA A|B
+    MVB '0'
+    LDA A-B
+    MVB 10
+    TST A-B
+    JLT .digit
+    MVB 39
+    LDA A-B
+.digit:
+    MVB 16
+    STO A*B __num
+    LOA __hex+1
+    MVB $20
+    LDA A|B
+    MVB '0'
+    LDA A-B
+    MVB 10
+    TST A-B
+    JLT .digit2
+    MVB 39
+    LDA A-B
+.digit2:
+    LOB __num
+    STO A|B __num
+    RTS Hex2Int8
 
 endprg:
 
@@ -171,11 +259,19 @@ PAG
 welcome: db "\e[2J\e[HCSC Monitor, Revision: 1.00, 02/12/2023\nType ? for help\n"
 usage: db "Usage: D dump, V video dump, C change, R run, X clear/reset, ? help\n"
 
-ORG $FC00
+ORG $FD00
 cmdline: db (16)
 __addr: dw
 __hex: db (4)
 __int16: dw
-__num: db
+__num: dw
 
-exp prompt
+
+exp Prompt
+exp Hex2Int8
+exp Hex2Int16
+exp __addr
+exp __hex
+exp __int16
+exp __num
+
